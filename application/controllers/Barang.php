@@ -6,7 +6,7 @@ class Barang extends CI_Controller {
     public function index()
     {
         $data = array(
-            'title' => 'Data Bearing - KENDA',
+            'title' => 'Data Barang - KENDA',
             'username' => $this->session->userdata('username'),
             'active_menu' => 'barang',
             'content' => 'barang/index'

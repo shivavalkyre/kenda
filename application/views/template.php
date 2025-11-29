@@ -87,7 +87,7 @@ ob_start();
             border: 1px solid var(--kenda-red);
             border-radius: 0 !important;
             min-width: 200px;
-            z-index: 1200 !important; /* Pastikan dropdown di atas elemen lain */
+            z-index: 1200 !important;
         }
         
         .dropdown-item {
@@ -224,7 +224,10 @@ ob_start();
             padding: 0 15px;
         }
         
-        /* DASHBOARD STYLES - MOBILE FRIENDLY */
+        /* ==================== */
+        /* DASHBOARD STYLES - STYLE ASLI DIPERTAHANKAN */
+        /* ==================== */
+        
         .welcome-section {
             position: relative;
             background: 
@@ -273,7 +276,7 @@ ob_start();
             margin-bottom: 0;
         }
         
-        /* STATS GRID - MOBILE FRIENDLY */
+        /* STATS GRID - STYLE ASLI DIPERTAHANKAN */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -327,7 +330,7 @@ ob_start();
             background-color: rgba(255, 0, 0, 0.1);
         }
         
-        /* CHARTS AND ACTIVITIES - MOBILE FRIENDLY */
+        /* CHARTS AND ACTIVITIES - STYLE ASLI DIPERTAHANKAN */
         .charts-container {
             display: grid;
             grid-template-columns: 1fr;
@@ -430,6 +433,118 @@ ob_start();
             padding: 10px 8px;
             font-size: 0.85rem;
             vertical-align: middle;
+        }
+        
+        /* CARD STYLES - STYLE ASLI DIPERTAHANKAN */
+        .card {
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background: white;
+        }
+        
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 15px 20px;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        .card-footer {
+            background-color: white;
+            border-top: 1px solid #e0e0e0;
+            padding: 15px 20px;
+        }
+        
+        /* BADGE STYLES */
+        .badge {
+            font-size: 0.75em;
+            font-weight: 500;
+        }
+        
+        .bg-tube {
+            background-color: #007bff !important;
+        }
+        
+        .bg-tire {
+            background-color: #28a745 !important;
+        }
+        
+        /* LABEL STYLES */
+        .label-barcode {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        
+        .scan-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .scan-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .scan-completed {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .scan-loaded {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        /* FORM STYLES */
+        .form-control, .form-select {
+            border-radius: 0;
+            border: 1px solid #ddd;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--kenda-red);
+            box-shadow: 0 0 0 0.2rem rgba(255, 0, 0, 0.25);
+        }
+        
+        /* MODAL STYLES */
+        .modal-content {
+            border-radius: 0;
+            border: 2px solid var(--kenda-red);
+        }
+        
+        .modal-header {
+            background-color: var(--kenda-black);
+            color: var(--kenda-white);
+            border-bottom: 2px solid var(--kenda-red);
+        }
+        
+        .btn-close-white {
+            filter: invert(1) grayscale(100%) brightness(200%);
+        }
+        
+        /* PAGINATION STYLES */
+        .pagination .page-link {
+            border-radius: 0;
+            color: var(--kenda-black);
+            border: 1px solid #ddd;
+        }
+        
+        .pagination .page-item.active .page-link {
+            background-color: var(--kenda-red);
+            border-color: var(--kenda-red);
+            color: white;
+        }
+        
+        .pagination .page-link:hover {
+            background-color: var(--kenda-light-gray);
+            border-color: #ddd;
         }
         
         /* MOBILE SPECIFIC STYLES - PERBAIKAN DROPDOWN */
@@ -704,29 +819,29 @@ ob_start();
                         <i class="fas fa-boxes"></i>
                         <span>Data Barang</span>
                     </a>
-                    <a class="nav-link <?php echo (isset($active_menu) && $active_menu == 'masuk') ? 'active' : ''; ?>" href="<?php echo site_url('barang_masuk'); ?>">
+                    <!-- <a class="nav-link <?php echo (isset($active_menu) && $active_menu == 'masuk') ? 'active' : ''; ?>" href="<?php echo site_url('barang_masuk'); ?>">
                         <i class="fas fa-arrow-down"></i>
                         <span>Barang Masuk</span>
+                    </a> -->
+                    <a class="nav-link <?php echo (isset($active_menu) && $active_menu == 'packing') ? 'active' : ''; ?>" href="<?php echo site_url('packing_list'); ?>">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Packing List</span>
                     </a>
-                    <a class="nav-link <?php echo (isset($active_menu) && $active_menu == 'keluar') ? 'active' : ''; ?>" href="<?php echo site_url('barang_keluar'); ?>">
+                    <!-- <a class="nav-link <?php echo (isset($active_menu) && $active_menu == 'keluar') ? 'active' : ''; ?>" href="<?php echo site_url('barang_keluar'); ?>">
                         <i class="fas fa-arrow-up"></i>
                         <span>Barang Keluar</span>
+                    </a> -->
+                    <a class="nav-link <?php echo (isset($active_menu) && $active_menu == 'scan') ? 'active' : ''; ?>" href="<?php echo site_url('scan'); ?>">
+                        <i class="fas fa-qrcode"></i>
+                        <span>Scan Label</span>
                     </a>
                     <a class="nav-link <?php echo (isset($active_menu) && $active_menu == 'stok') ? 'active' : ''; ?>" href="<?php echo site_url('stok'); ?>">
                         <i class="fas fa-chart-bar"></i>
                         <span>Laporan Stok</span>
                     </a>
-                    <a class="nav-link <?php echo (isset($active_menu) && $active_menu == 'supplier') ? 'active' : ''; ?>" href="<?php echo site_url('supplier'); ?>">
-                        <i class="fas fa-truck"></i>
-                        <span>Data Supplier</span>
-                    </a>
                     <a class="nav-link <?php echo (isset($active_menu) && $active_menu == 'kategori') ? 'active' : ''; ?>" href="<?php echo site_url('kategori'); ?>">
                         <i class="fas fa-tags"></i>
                         <span>Kategori Barang</span>
-                    </a>
-                    <a class="nav-link <?php echo (isset($active_menu) && $active_menu == 'users') ? 'active' : ''; ?>" href="<?php echo site_url('users'); ?>">
-                        <i class="fas fa-users"></i>
-                        <span>Manajemen User</span>
                     </a>
                 </nav>
             </div>
