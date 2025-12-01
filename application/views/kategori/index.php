@@ -336,7 +336,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function loadKategoriList() {
-    fetch(`${baseUrl}/kategori/api/list`)
+    fetch(`${baseUrl}/gudang/api_list_kategori`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -352,7 +352,7 @@ function loadKategoriList() {
 }
 
 function loadStatistics() {
-    fetch(`${baseUrl}/kategori/api/statistics`)
+    fetch(`${baseUrl}/gudang/api_kategori_statistics`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -402,7 +402,7 @@ function renderKategoriTable(kategoriList) {
                 <td class="fw-bold">${kategori.nama_kategori}</td>
                 <td>${kategori.deskripsi || '-'}</td>
                 <td>
-                    <span class="fw-bold text-primary">${kategori.jumlah_barang}</span> barang
+                    <span class="fw-bold text-primary">${kategori.jumlah_barang || 0}</span> barang
                 </td>
                 <td>${statusBadge}</td>
                 <td>
@@ -440,42 +440,42 @@ function renderKategoriTable(kategoriList) {
 function simpanKategori() {
     const formData = new FormData(document.getElementById('formTambahKategori'));
     
-    fetch(`${baseUrl}/kategori/simpan`, {
+    fetch(`${baseUrl}/gudang/simpan_kategori`, {
         method: 'POST',
         body: formData
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert(data.message);
+            showSuccess(data.message);
             // Close modal and refresh data
             const modal = bootstrap.Modal.getInstance(document.getElementById('tambahKategoriModal'));
             modal.hide();
             loadKategoriList();
             loadStatistics();
         } else {
-            alert('Error: ' + data.message);
+            showError(data.message);
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Terjadi kesalahan saat menyimpan kategori');
+        showError('Terjadi kesalahan saat menyimpan kategori');
     });
 }
 
 function editKategori(id) {
-    fetch(`${baseUrl}/kategori/api/detail/${id}`)
+    fetch(`${baseUrl}/gudang/api_detail_kategori/${id}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 showEditModal(data.data);
             } else {
-                alert('Gagal memuat data kategori');
+                showError('Gagal memuat data kategori');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Terjadi kesalahan saat memuat data');
+            showError('Terjadi kesalahan saat memuat data');
         });
 }
 
@@ -495,41 +495,42 @@ function showEditModal(data) {
 function updateKategori() {
     const formData = new FormData(document.getElementById('formEditKategori'));
     
-    fetch(`${baseUrl}/kategori/update`, {
+    fetch(`${baseUrl}/gudang/update_kategori`, {
         method: 'POST',
         body: formData
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert(data.message);
+            showSuccess(data.message);
             // Close modal and refresh data
             const modal = bootstrap.Modal.getInstance(document.getElementById('editKategoriModal'));
             modal.hide();
             loadKategoriList();
+            loadStatistics();
         } else {
-            alert('Error: ' + data.message);
+            showError(data.message);
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Terjadi kesalahan saat mengupdate kategori');
+        showError('Terjadi kesalahan saat mengupdate kategori');
     });
 }
 
 function detailKategori(id) {
-    fetch(`${baseUrl}/kategori/api/detail/${id}`)
+    fetch(`${baseUrl}/gudang/api_detail_kategori/${id}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 showDetailModal(data.data);
             } else {
-                alert('Gagal memuat detail kategori');
+                showError('Gagal memuat detail kategori');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Terjadi kesalahan saat memuat detail');
+            showError('Terjadi kesalahan saat memuat detail');
         });
 }
 
@@ -537,6 +538,42 @@ function showDetailModal(data) {
     const statusBadge = data.status === 'active' ? 
         '<span class="badge bg-success">Aktif</span>' : 
         '<span class="badge bg-secondary">Nonaktif</span>';
+    
+    // Handle barang terbaru data structure
+    let barangTerbaruHTML = '';
+    if (data.barang_terbaru && data.barang_terbaru.length > 0) {
+        barangTerbaruHTML = `
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="section-header mb-3">
+                    <h6 class="section-title mb-0">
+                        <i class="fas fa-boxes me-2"></i>Barang Terbaru (${data.barang_terbaru.length} barang)
+                    </h6>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Kode Barang</th>
+                                <th>Nama Barang</th>
+                                <th>Stok</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.barang_terbaru.map(barang => `
+                                <tr>
+                                    <td><span class="badge bg-dark">${barang.kode_barang || '-'}</span></td>
+                                    <td>${barang.nama_barang || '-'}</td>
+                                    <td><span class="badge ${barang.stok <= barang.stok_minimum ? 'bg-warning' : 'bg-success'}">${barang.stok || 0}</span></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        `;
+    }
     
     const modalContent = `
         <div class="row">
@@ -557,7 +594,7 @@ function showDetailModal(data) {
             <div class="col-md-6">
                 <div class="info-group mb-3">
                     <label class="form-label text-muted small mb-1">Jumlah Barang</label>
-                    <div class="fw-bold text-primary">${data.jumlah_barang} barang</div>
+                    <div class="fw-bold text-primary">${data.jumlah_barang || 0} barang</div>
                 </div>
                 <div class="info-group mb-3">
                     <label class="form-label text-muted small mb-1">Dibuat Pada</label>
@@ -579,35 +616,7 @@ function showDetailModal(data) {
             </div>
         </div>
         
-        ${data.barang_terbaru && data.barang_terbaru.length > 0 ? `
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="section-header mb-3">
-                    <h6 class="section-title mb-0">
-                        <i class="fas fa-boxes me-2"></i>Barang Terbaru (${data.barang_terbaru.length} barang)
-                    </h6>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-sm table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Kode Barang</th>
-                                <th>Nama Barang</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${data.barang_terbaru.map(barang => `
-                                <tr>
-                                    <td><span class="badge bg-dark">${barang.kode}</span></td>
-                                    <td>${barang.nama}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        ` : ''}
+        ${barangTerbaruHTML}
     `;
     
     document.getElementById('detailKategoriContent').innerHTML = modalContent;
@@ -619,20 +628,20 @@ function showDetailModal(data) {
 
 function hapusKategori(id, nama) {
     if (confirm(`Apakah Anda yakin ingin menghapus kategori "${nama}"?`)) {
-        fetch(`${baseUrl}/kategori/hapus/${id}`)
+        fetch(`${baseUrl}/gudang/hapus_kategori/${id}`)
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert(data.message);
+                    showSuccess(data.message);
                     loadKategoriList();
                     loadStatistics();
                 } else {
-                    alert('Error: ' + data.message);
+                    showError(data.message);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Terjadi kesalahan saat menghapus kategori');
+                showError('Terjadi kesalahan saat menghapus kategori');
             });
     }
 }
@@ -665,6 +674,8 @@ function refreshData() {
 
 // Helper function untuk format tanggal
 function formatTanggal(tanggal) {
+    if (!tanggal) return '-';
+    
     const options = { 
         year: 'numeric', 
         month: 'long', 
@@ -672,16 +683,31 @@ function formatTanggal(tanggal) {
         hour: '2-digit',
         minute: '2-digit'
     };
-    return new Date(tanggal).toLocaleDateString('id-ID', options);
+    
+    try {
+        return new Date(tanggal).toLocaleDateString('id-ID', options);
+    } catch (e) {
+        return tanggal;
+    }
 }
 
 function showError(message) {
-    // Implement error notification
-    alert('Error: ' + message);
+    // You can replace this with a toast notification
+    Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: message,
+        timer: 3000
+    });
 }
 
 function showSuccess(message) {
-    // Implement success notification
-    console.log('Success:', message);
+    // You can replace this with a toast notification
+    Swal.fire({
+        icon: 'success',
+        title: 'Sukses',
+        text: message,
+        timer: 2000
+    });
 }
 </script>

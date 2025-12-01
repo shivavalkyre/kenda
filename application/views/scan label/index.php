@@ -96,6 +96,16 @@
 </div>
 
 <script>
+// Status constants untuk konsistensi
+const SCAN_STATUS = {
+    DRAFT: 'draft',
+    PRINTED: 'printed',
+    SCANNED_OUT: 'scanned_out',
+    SCANNED_IN: 'scanned_in',
+    COMPLETED: 'completed',
+    PENDING: 'pending'
+};
+
 // Simulated data
 let scannedToday = 8;
 let loadedToday = 5;
@@ -143,76 +153,224 @@ function processManualInput() {
         return;
     }
     
+    // Validasi format label
+    if (!validateLabelFormat(input)) {
+        alert('Format label tidak valid! Format yang benar: LBLXXX (contoh: LBL001)');
+        return;
+    }
+    
     processScanResult(input);
     document.getElementById('manualInput').value = '';
 }
 
-function processScanResult(labelCode) {
-    // Simulate processing scan result
+function validateLabelFormat(label) {
+    const labelRegex = /^LBL\d{3,}$/i;
+    return labelRegex.test(label);
+}
+
+async function processScanResult(labelCode) {
+    try {
+        // Cek status packing list dari database
+        const response = await fetch(`${baseUrl}/packing-list/api/check-label/${labelCode}`);
+        const data = await response.json();
+        
+        if (!data.success) {
+            showScanError('Label tidak ditemukan atau tidak valid');
+            return;
+        }
+        
+        const packingData = data.data;
+        showScanResult(packingData, labelCode);
+        
+    } catch (error) {
+        console.error('Error:', error);
+        showScanError('Terjadi kesalahan saat memproses scan');
+    }
+}
+
+function showScanResult(packingData, labelCode) {
     const resultContent = document.getElementById('resultContent');
     const scanResults = document.getElementById('scanResults');
     
-    // Determine scan type based on label status (simulated)
-    const scanType = Math.random() > 0.5 ? 'out' : 'loading';
+    const { status_scan_out, status_scan_in, no_packing, customer } = packingData;
     
-    if (scanType === 'out') {
-        resultContent.innerHTML = `
-            <div class="alert alert-success">
-                <h6><i class="fas fa-check-circle me-2"></i>Scan Berhasil!</h6>
-                <p><strong>Label:</strong> ${labelCode}</p>
-                <p><strong>Status:</strong> Barang keluar gudang tercatat</p>
-                <p><strong>Waktu:</strong> ${new Date().toLocaleTimeString()}</p>
-            </div>
-            <div class="d-grid gap-2">
-                <button class="btn btn-kenda" onclick="confirmScan('${labelCode}', 'out')">
-                    <i class="fas fa-check me-2"></i>Konfirmasi Scan Keluar
-                </button>
-            </div>
+    let scanType = '';
+    let alertType = '';
+    let message = '';
+    let buttonAction = '';
+    
+    // Tentukan aksi berdasarkan status saat ini
+    if (status_scan_out === SCAN_STATUS.PRINTED && status_scan_in === SCAN_STATUS.PENDING) {
+        // Bisa scan out
+        scanType = 'out';
+        alertType = 'success';
+        message = `
+            <h6><i class="fas fa-check-circle me-2"></i>Scan Out Ditemukan!</h6>
+            <p><strong>Packing List:</strong> ${no_packing}</p>
+            <p><strong>Customer:</strong> ${customer}</p>
+            <p><strong>Status:</strong> Siap untuk scan keluar gudang</p>
+            <p><strong>Waktu:</strong> ${new Date().toLocaleTimeString()}</p>
         `;
+        buttonAction = `confirmScan('${labelCode}', '${SCAN_STATUS.SCANNED_OUT}', ${packingData.id})`;
+        
+    } else if (status_scan_out === SCAN_STATUS.SCANNED_OUT && status_scan_in === SCAN_STATUS.PENDING) {
+        // Bisa scan in (loading)
+        scanType = 'loading';
+        alertType = 'info';
+        message = `
+            <h6><i class="fas fa-truck-loading me-2"></i>Scan Loading Ditemukan!</h6>
+            <p><strong>Packing List:</strong> ${no_packing}</p>
+            <p><strong>Customer:</strong> ${customer}</p>
+            <p><strong>Status:</strong> Siap untuk scan loading kendaraan</p>
+            <p><strong>Waktu:</strong> ${new Date().toLocaleTimeString()}</p>
+        `;
+        buttonAction = `confirmScan('${labelCode}', '${SCAN_STATUS.SCANNED_IN}', ${packingData.id})`;
+        
+    } else if (status_scan_out === SCAN_STATUS.SCANNED_OUT && status_scan_in === SCAN_STATUS.SCANNED_IN) {
+        // Bisa complete loading
+        scanType = 'complete';
+        alertType = 'warning';
+        message = `
+            <h6><i class="fas fa-check-double me-2"></i>Loading Siap Diselesaikan!</h6>
+            <p><strong>Packing List:</strong> ${no_packing}</p>
+            <p><strong>Customer:</strong> ${customer}</p>
+            <p><strong>Status:</strong> Siap untuk konfirmasi selesai loading</p>
+            <p><strong>Waktu:</strong> ${new Date().toLocaleTimeString()}</p>
+        `;
+        buttonAction = `confirmScan('${labelCode}', '${SCAN_STATUS.COMPLETED}', ${packingData.id})`;
+        
+    } else if (status_scan_in === SCAN_STATUS.COMPLETED) {
+        // Sudah selesai
+        scanType = 'completed';
+        alertType = 'secondary';
+        message = `
+            <h6><i class="fas fa-flag-checkered me-2"></i>Loading Sudah Selesai!</h6>
+            <p><strong>Packing List:</strong> ${no_packing}</p>
+            <p><strong>Customer:</strong> ${customer}</p>
+            <p><strong>Status:</strong> Proses loading sudah selesai</p>
+            <p><strong>Waktu:</strong> ${new Date().toLocaleTimeString()}</p>
+        `;
+        buttonAction = '';
+        
     } else {
-        resultContent.innerHTML = `
-            <div class="alert alert-info">
-                <h6><i class="fas fa-truck-loading me-2"></i>Loading Scan!</h6>
-                <p><strong>Label:</strong> ${labelCode}</p>
-                <p><strong>Status:</strong> Konfirmasi loading barang</p>
-                <p><strong>Waktu:</strong> ${new Date().toLocaleTimeString()}</p>
-            </div>
-            <div class="d-grid gap-2">
-                <button class="btn btn-kenda-red" onclick="confirmScan('${labelCode}', 'loading')">
-                    <i class="fas fa-truck me-2"></i>Konfirmasi Loading
-                </button>
-            </div>
+        // Status tidak valid untuk scan
+        scanType = 'invalid';
+        alertType = 'danger';
+        message = `
+            <h6><i class="fas fa-exclamation-triangle me-2"></i>Status Tidak Valid!</h6>
+            <p><strong>Packing List:</strong> ${no_packing}</p>
+            <p><strong>Customer:</strong> ${customer}</p>
+            <p><strong>Status Saat Ini:</strong> ${getStatusText(status_scan_out, status_scan_in)}</p>
+            <p><strong>Pesan:</strong> Status tidak memungkinkan untuk scan saat ini</p>
         `;
+        buttonAction = '';
     }
+    
+    resultContent.innerHTML = `
+        <div class="alert alert-${alertType}">
+            ${message}
+        </div>
+        ${buttonAction ? `
+        <div class="d-grid gap-2">
+            <button class="btn btn-kenda" onclick="${buttonAction}">
+                <i class="fas fa-check me-2"></i>${getButtonText(scanType)}
+            </button>
+        </div>
+        ` : ''}
+    `;
     
     scanResults.style.display = 'block';
     
-    // Add to recent scans
-    recentScans.unshift({
-        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-        label: labelCode,
-        type: scanType
-    });
-    
-    // Keep only last 5 scans
-    if (recentScans.length > 5) {
-        recentScans.pop();
+    // Add to recent scans hanya jika valid
+    if (scanType !== 'invalid' && scanType !== 'completed') {
+        addToRecentScans(labelCode, scanType, no_packing);
     }
-    
-    updateRecentScans();
 }
 
-function confirmScan(labelCode, type) {
-    if (type === 'out') {
-        scannedToday++;
-        alert(`Label ${labelCode} berhasil dicatat sebagai barang keluar gudang.`);
-    } else {
-        loadedToday++;
-        completedToday++;
-        alert(`Label ${labelCode} berhasil dikonfirmasi loading selesai.`);
+function getStatusText(scanOut, scanIn) {
+    const outStatus = {
+        [SCAN_STATUS.DRAFT]: 'Draft',
+        [SCAN_STATUS.PRINTED]: 'Label Tercetak',
+        [SCAN_STATUS.SCANNED_OUT]: 'Terkirim'
+    }[scanOut] || 'Unknown';
+    
+    const inStatus = {
+        [SCAN_STATUS.PENDING]: 'Belum Loading',
+        [SCAN_STATUS.SCANNED_IN]: 'Sedang Loading',
+        [SCAN_STATUS.COMPLETED]: 'Selesai Loading'
+    }[scanIn] || 'Unknown';
+    
+    return `${outStatus} | ${inStatus}`;
+}
+
+function getButtonText(scanType) {
+    const buttonTexts = {
+        'out': 'Konfirmasi Scan Keluar Gudang',
+        'loading': 'Konfirmasi Scan Loading Kendaraan',
+        'complete': 'Konfirmasi Selesai Loading',
+        'completed': 'Proses Selesai',
+        'invalid': 'Tidak Dapat Diproses'
+    };
+    return buttonTexts[scanType] || 'Konfirmasi';
+}
+
+function showScanError(message) {
+    const resultContent = document.getElementById('resultContent');
+    const scanResults = document.getElementById('scanResults');
+    
+    resultContent.innerHTML = `
+        <div class="alert alert-danger">
+            <h6><i class="fas fa-exclamation-triangle me-2"></i>Scan Gagal!</h6>
+            <p>${message}</p>
+        </div>
+    `;
+    
+    scanResults.style.display = 'block';
+}
+
+async function confirmScan(labelCode, action, packingId) {
+    try {
+        const response = await fetch(`${baseUrl}/packing-list/api/process-scan`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `packing_id=${packingId}&action=${action}&label_code=${labelCode}`
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showScanSuccess(labelCode, action, data.data);
+            updateStatisticsAfterScan(action);
+        } else {
+            alert('Gagal memproses scan: ' + (data.message || 'Unknown error'));
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Terjadi kesalahan saat memproses scan');
+    }
+}
+
+function showScanSuccess(labelCode, action, data) {
+    let message = '';
+    
+    switch (action) {
+        case SCAN_STATUS.SCANNED_OUT:
+            message = `Label ${labelCode} berhasil dicatat sebagai barang keluar gudang.`;
+            break;
+        case SCAN_STATUS.SCANNED_IN:
+            message = `Label ${labelCode} berhasil dikonfirmasi loading ke kendaraan.`;
+            break;
+        case SCAN_STATUS.COMPLETED:
+            message = `Label ${labelCode} berhasil dikonfirmasi selesai loading.`;
+            break;
+        default:
+            message = `Label ${labelCode} berhasil diproses.`;
     }
     
-    updateStatistics();
+    alert(message);
     
     // Reset for next scan
     document.getElementById('scanResults').style.display = 'none';
@@ -227,6 +385,45 @@ function confirmScan(labelCode, type) {
     `;
 }
 
+function updateStatisticsAfterScan(action) {
+    switch (action) {
+        case SCAN_STATUS.SCANNED_OUT:
+            scannedToday++;
+            break;
+        case SCAN_STATUS.SCANNED_IN:
+            loadedToday++;
+            break;
+        case SCAN_STATUS.COMPLETED:
+            completedToday++;
+            break;
+    }
+    
+    updateStatistics();
+}
+
+function addToRecentScans(labelCode, scanType, noPacking) {
+    const scanTypes = {
+        'out': 'Scan keluar gudang',
+        'loading': 'Loading kendaraan',
+        'complete': 'Selesai loading'
+    };
+    
+    recentScans.unshift({
+        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+        label: labelCode,
+        type: scanType,
+        packing: noPacking,
+        description: scanTypes[scanType] || 'Scan diproses'
+    });
+    
+    // Keep only last 5 scans
+    if (recentScans.length > 5) {
+        recentScans.pop();
+    }
+    
+    updateRecentScans();
+}
+
 function updateStatistics() {
     document.getElementById('todayScanned').textContent = scannedToday;
     document.getElementById('todayLoaded').textContent = loadedToday;
@@ -238,15 +435,18 @@ function updateRecentScans() {
     container.innerHTML = '';
     
     recentScans.forEach(scan => {
-        const icon = scan.type === 'out' ? 'fa-arrow-right' : 'fa-truck-loading';
-        const color = scan.type === 'out' ? 'text-primary' : 'text-success';
+        const icon = scan.type === 'out' ? 'fa-arrow-right' : 
+                    scan.type === 'loading' ? 'fa-truck-loading' : 'fa-check-double';
+        const color = scan.type === 'out' ? 'text-primary' : 
+                     scan.type === 'loading' ? 'text-info' : 'text-success';
         
         container.innerHTML += `
             <div class="activity-item">
                 <div class="activity-time">${scan.time}</div>
                 <div class="activity-content">
-                    <strong>Label ${scan.label}</strong> - 
-                    ${scan.type === 'out' ? 'Scan keluar gudang' : 'Loading selesai'}
+                    <strong>${scan.packing}</strong> - ${scan.description}
+                    <br>
+                    <small class="text-muted">Label: ${scan.label}</small>
                     <i class="fas ${icon} ${color} ms-1"></i>
                 </div>
             </div>
@@ -260,4 +460,7 @@ document.getElementById('manualInput').addEventListener('keypress', function(e) 
         processManualInput();
     }
 });
+
+// Base URL untuk API calls
+const baseUrl = '<?php echo site_url(); ?>';
 </script>

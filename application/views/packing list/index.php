@@ -29,7 +29,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="stat-card h-100">
                 <div class="stat-number text-warning"><?php echo $pending_packing ?? '3'; ?></div>
-                <div class="stat-label">Pending</div>
+                <div class="stat-label">Pending Scan</div>
                 <div class="stat-trend trend-down">
                     <i class="fas fa-clock me-1"></i> Perlu diproses
                 </div>
@@ -38,7 +38,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="stat-card h-100">
                 <div class="stat-number text-success"><?php echo $completed_packing ?? '12'; ?></div>
-                <div class="stat-label">Selesai</div>
+                <div class="stat-label">Selesai Loading</div>
                 <div class="stat-trend trend-up">
                     <i class="fas fa-check me-1"></i> Terproses
                 </div>
@@ -74,8 +74,9 @@ defined('BASEPATH') OR exit('No direct script access allowed');
                             <li><a class="dropdown-item" href="#" data-status="all">Semua</a></li>
                             <li><a class="dropdown-item" href="#" data-status="draft">Draft</a></li>
                             <li><a class="dropdown-item" href="#" data-status="printed">Label Tercetak</a></li>
-                            <li><a class="dropdown-item" href="#" data-status="scanned">Terkirim</a></li>
-                            <li><a class="dropdown-item" href="#" data-status="loaded">Loading Selesai</a></li>
+                            <li><a class="dropdown-item" href="#" data-status="scanned_out">Terkirim (Scan Out)</a></li>
+                            <li><a class="dropdown-item" href="#" data-status="scanned_in">Loading (Scan In)</a></li>
+                            <li><a class="dropdown-item" href="#" data-status="completed">Selesai Loading</a></li>
                         </ul>
                     </div>
                     <button class="btn btn-outline-info" onclick="refreshData()">
@@ -116,9 +117,9 @@ defined('BASEPATH') OR exit('No direct script access allowed');
                                     <th>Tanggal</th>
                                     <th>Customer</th>
                                     <th>Jumlah Item</th>
-                                    <th>Status Label</th>
-                                    <th>Status Loading</th>
-                                    <th width="180">Aksi</th>
+                                    <th>Status Scan Out</th>
+                                    <th>Status Scan In</th>
+                                    <th width="200">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="packingTableBody">
@@ -437,6 +438,30 @@ defined('BASEPATH') OR exit('No direct script access allowed');
     </div>
 </div>
 
+<!-- Modal Scan Actions -->
+<div class="modal fade" id="scanActionsModal" tabindex="-1" aria-labelledby="scanActionsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white py-3">
+                <h5 class="modal-title mb-0" id="scanActionsModalLabel">
+                    <i class="fas fa-qrcode me-2"></i>Scan Packing List
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="scanActionsContent">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer bg-light py-3">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal Konfirmasi Hapus -->
 <div class="modal fade" id="konfirmasiHapusModal" tabindex="-1" aria-labelledby="konfirmasiHapusModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -528,9 +553,76 @@ defined('BASEPATH') OR exit('No direct script access allowed');
     padding: 0.25rem 0.5rem;
     font-size: 0.75rem;
 }
+
+.scan-action-btn {
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.scan-action-btn:hover {
+    border-color: #007bff;
+    background-color: #f8f9fa;
+}
+
+.scan-action-btn i {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.status-timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.status-timeline::before {
+    content: '';
+    position: absolute;
+    left: 0.5rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #e9ecef;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -1.5rem;
+    top: 0.25rem;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    background-color: #6c757d;
+}
+
+.timeline-item.active::before {
+    background-color: #28a745;
+}
+
+.timeline-item.completed::before {
+    background-color: #007bff;
+}
 </style>
 
 <script>
+// Status constants untuk konsistensi
+const SCAN_STATUS = {
+    DRAFT: 'draft',
+    PRINTED: 'printed',
+    SCANNED_OUT: 'scanned_out',
+    SCANNED_IN: 'scanned_in',
+    COMPLETED: 'completed',
+    PENDING: 'pending'
+};
+
 const baseUrl = '<?php echo site_url(); ?>';
 let items = [];
 let editItems = [];
@@ -538,6 +630,7 @@ let itemCounter = 0;
 let editItemCounter = 0;
 let currentDetailPackingId = null;
 let currentPackingToDelete = null;
+let currentScanPackingId = null;
 
 // Paging variables
 let currentPage = 1;
@@ -619,6 +712,29 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// Fungsi validasi status transition
+function validateStatusTransition(currentStatus, targetStatus, currentScanIn = SCAN_STATUS.PENDING) {
+    const validTransitions = {
+        [SCAN_STATUS.PRINTED]: [SCAN_STATUS.SCANNED_OUT],
+        [SCAN_STATUS.SCANNED_OUT]: [SCAN_STATUS.PRINTED, SCAN_STATUS.SCANNED_IN],
+        [SCAN_STATUS.SCANNED_IN]: [SCAN_STATUS.SCANNED_OUT, SCAN_STATUS.COMPLETED]
+    };
+    
+    return validTransitions[currentStatus]?.includes(targetStatus) || false;
+}
+
+function getNextValidActions(statusScanOut, statusScanIn) {
+    const actions = {
+        canScanOut: statusScanOut === SCAN_STATUS.PRINTED && statusScanIn === SCAN_STATUS.PENDING,
+        canUndoScanOut: statusScanOut === SCAN_STATUS.SCANNED_OUT && statusScanIn === SCAN_STATUS.PENDING,
+        canScanIn: statusScanOut === SCAN_STATUS.SCANNED_OUT && statusScanIn === SCAN_STATUS.PENDING,
+        canComplete: statusScanOut === SCAN_STATUS.SCANNED_OUT && statusScanIn === SCAN_STATUS.SCANNED_IN,
+        canUndoScanIn: statusScanIn === SCAN_STATUS.SCANNED_IN
+    };
+    
+    return actions;
+}
+
 function loadPackingList(page = 1) {
     const params = new URLSearchParams({
         page: page,
@@ -632,11 +748,9 @@ function loadPackingList(page = 1) {
         .then(data => {
             if (data.success) {
                 renderPackingTable(data.data);
-                // Pastikan data pagination ada sebelum mengupdate
                 if (data.pagination) {
                     updatePagination(data.pagination);
                 } else {
-                    // Fallback jika pagination tidak tersedia
                     updatePaginationWithFallback(data.data ? data.data.length : 0, page);
                 }
             } else {
@@ -654,7 +768,6 @@ function loadPackingList(page = 1) {
 function renderPackingTable(packingList) {
     const tbody = document.getElementById('packingTableBody');
     
-    // Validasi packingList
     if (!packingList || !Array.isArray(packingList)) {
         tbody.innerHTML = `
             <tr>
@@ -690,14 +803,13 @@ function renderPackingTable(packingList) {
     const startNumber = (currentPage - 1) * pageSize + 1;
     
     packingList.forEach((packing, index) => {
-        // Validasi data packing
         if (!packing) return;
         
-        const labelStatus = getLabelStatus(packing.status_label);
-        const loadingStatus = getLoadingStatus(packing.status_loading);
+        const scanOutStatus = getScanOutStatus(packing.status_scan_out);
+        const scanInStatus = getScanInStatus(packing.status_scan_in);
         
         html += `
-            <tr data-status-label="${packing.status_label || ''}" data-status-loading="${packing.status_loading || ''}">
+            <tr data-status-scan-out="${packing.status_scan_out || ''}" data-status-scan-in="${packing.status_scan_in || ''}">
                 <td>
                     <input type="checkbox" class="packing-checkbox" value="${packing.id || ''}">
                 </td>
@@ -711,10 +823,16 @@ function renderPackingTable(packingList) {
                     <span class="fw-bold">${packing.jumlah_item || 0} item</span>
                 </td>
                 <td>
-                    <span class="badge ${labelStatus.class}">${labelStatus.text}</span>
+                    <span class="badge ${scanOutStatus.class}">
+                        <i class="${scanOutStatus.icon} me-1"></i>${scanOutStatus.text}
+                    </span>
+                    ${packing.scan_out_time ? `<br><small class="text-muted">${formatTime(packing.scan_out_time)}</small>` : ''}
                 </td>
                 <td>
-                    <span class="badge ${loadingStatus.class}">${loadingStatus.text}</span>
+                    <span class="badge ${scanInStatus.class}">
+                        <i class="${scanInStatus.icon} me-1"></i>${scanInStatus.text}
+                    </span>
+                    ${packing.scan_in_time ? `<br><small class="text-muted">${formatTime(packing.scan_in_time)}</small>` : ''}
                 </td>
                 <td>
                     <div class="btn-group btn-group-sm" role="group">
@@ -734,8 +852,8 @@ function renderPackingTable(packingList) {
                             <i class="fas fa-print"></i>
                         </button>
                         <button type="button" class="btn btn-outline-info"
-                                onclick="scanPacking(${packing.id || 0})"
-                                data-bs-toggle="tooltip" title="Scan">
+                                onclick="showScanActions(${packing.id || 0}, '${packing.no_packing || ''}')"
+                                data-bs-toggle="tooltip" title="Scan Actions">
                             <i class="fas fa-qrcode"></i>
                         </button>
                         <button type="button" class="btn btn-outline-danger"
@@ -762,23 +880,19 @@ function updatePagination(pagination) {
     const paginationContainer = document.getElementById('paginationContainer');
     const paginationInfo = document.getElementById('paginationInfo');
     
-    // Validasi data pagination
     if (!pagination || typeof pagination.total === 'undefined') {
         console.warn('Data pagination tidak valid:', pagination);
         updatePaginationWithFallback(0, currentPage);
         return;
     }
     
-    // Update pagination info
     const startItem = (currentPage - 1) * pageSize + 1;
     const endItem = Math.min(currentPage * pageSize, pagination.total);
     paginationInfo.innerHTML = `Menampilkan <strong>${startItem}-${endItem}</strong> dari <strong>${pagination.total}</strong> packing list`;
     
-    // Update pagination buttons
     let paginationHtml = '';
     totalPages = pagination.total_pages || 1;
     
-    // Jika hanya ada 1 halaman, sembunyikan pagination
     if (totalPages <= 1) {
         paginationContainer.innerHTML = '';
         return;
@@ -798,7 +912,6 @@ function updatePagination(pagination) {
     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
     let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
     
-    // Adjust start page if we're near the end
     if (endPage - startPage + 1 < maxVisiblePages) {
         startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
@@ -844,15 +957,12 @@ function updatePagination(pagination) {
     paginationContainer.innerHTML = paginationHtml;
 }
 
-// Fallback function ketika pagination tidak tersedia
 function updatePaginationWithFallback(totalItems, currentPage) {
     const paginationContainer = document.getElementById('paginationContainer');
     const paginationInfo = document.getElementById('paginationInfo');
     
-    // Hitung total pages berdasarkan total items
     totalPages = Math.ceil(totalItems / pageSize) || 1;
     
-    // Update pagination info
     const startItem = (currentPage - 1) * pageSize + 1;
     const endItem = Math.min(currentPage * pageSize, totalItems);
     
@@ -862,13 +972,11 @@ function updatePaginationWithFallback(totalItems, currentPage) {
         paginationInfo.innerHTML = 'Tidak ada data yang ditampilkan';
     }
     
-    // Jika hanya ada 1 halaman, sembunyikan pagination
     if (totalPages <= 1) {
         paginationContainer.innerHTML = '';
         return;
     }
     
-    // Buat pagination sederhana
     let paginationHtml = '';
     
     // Previous button
@@ -927,22 +1035,340 @@ function applyFilter(status) {
     loadPackingList(currentPage);
 }
 
-function getLabelStatus(status) {
+function getScanOutStatus(status) {
     const statusMap = {
-        'draft': { text: 'Draft', class: 'bg-secondary' },
-        'printed': { text: 'Tercetak', class: 'bg-success' },
-        'scanned': { text: 'Terkirim', class: 'bg-info' }
+        [SCAN_STATUS.DRAFT]: { text: 'Draft', class: 'bg-secondary', icon: 'fas fa-file' },
+        [SCAN_STATUS.PRINTED]: { text: 'Label Tercetak', class: 'bg-warning', icon: 'fas fa-print' },
+        [SCAN_STATUS.SCANNED_OUT]: { text: 'Terkirim', class: 'bg-success', icon: 'fas fa-check-circle' }
     };
-    return statusMap[status] || { text: 'Unknown', class: 'bg-secondary' };
+    return statusMap[status] || { text: 'Unknown', class: 'bg-secondary', icon: 'fas fa-question-circle' };
 }
 
-function getLoadingStatus(status) {
+function getScanInStatus(status) {
     const statusMap = {
-        'pending': { text: 'Pending', class: 'bg-warning' },
-        'loading': { text: 'Loading', class: 'bg-primary' },
-        'loaded': { text: 'Selesai', class: 'bg-success' }
+        [SCAN_STATUS.PENDING]: { text: 'Belum Loading', class: 'bg-secondary', icon: 'fas fa-clock' },
+        [SCAN_STATUS.SCANNED_IN]: { text: 'Loading', class: 'bg-primary', icon: 'fas fa-truck-loading' },
+        [SCAN_STATUS.COMPLETED]: { text: 'Selesai', class: 'bg-success', icon: 'fas fa-flag-checkered' }
     };
-    return statusMap[status] || { text: 'Unknown', class: 'bg-secondary' };
+    return statusMap[status] || { text: 'Unknown', class: 'bg-secondary', icon: 'fas fa-question-circle' };
+}
+
+function showScanActions(packingId, noPacking) {
+    currentScanPackingId = packingId;
+    
+    fetch(`${baseUrl}/packing-list/api/detail/${packingId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showScanActionsModal(data.data, noPacking);
+            } else {
+                alert('Gagal memuat data packing list untuk scan');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Terjadi kesalahan saat memuat data untuk scan');
+        });
+}
+
+function showScanActionsModal(data, noPacking) {
+    const scanOutStatus = getScanOutStatus(data.status_scan_out);
+    const scanInStatus = getScanInStatus(data.status_scan_in);
+    
+    // Dapatkan valid actions berdasarkan status saat ini
+    const validActions = getNextValidActions(data.status_scan_out, data.status_scan_in);
+    
+    const modalContent = `
+        <div class="text-center mb-4">
+            <h6 class="fw-bold">${noPacking}</h6>
+            <p class="text-muted mb-0">${data.customer || 'N/A'}</p>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-6">
+                <div class="text-center">
+                    <label class="form-label text-muted small mb-2">Status Scan Out</label>
+                    <div>
+                        <span class="badge ${scanOutStatus.class}">
+                            <i class="${scanOutStatus.icon} me-1"></i>${scanOutStatus.text}
+                        </span>
+                    </div>
+                    ${data.scan_out_time ? `<small class="text-muted d-block mt-1">${formatTime(data.scan_out_time)}</small>` : ''}
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="text-center">
+                    <label class="form-label text-muted small mb-2">Status Scan In</label>
+                    <div>
+                        <span class="badge ${scanInStatus.class}">
+                            <i class="${scanInStatus.icon} me-1"></i>${scanInStatus.text}
+                        </span>
+                    </div>
+                    ${data.scan_in_time ? `<small class="text-muted d-block mt-1">${formatTime(data.scan_in_time)}</small>` : ''}
+                </div>
+            </div>
+        </div>
+        
+        <div class="scan-actions-container">
+            <!-- Scan Out Actions -->
+            <div class="mb-3">
+                <h6 class="section-title mb-3">
+                    <i class="fas fa-sign-out-alt me-2"></i>Scan Keluar Gudang
+                </h6>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <button type="button" class="btn btn-outline-primary w-100 scan-action-btn ${validActions.canScanOut ? '' : 'disabled'}" 
+                                onclick="${validActions.canScanOut ? `scanOutGudang(${data.id})` : ''}" 
+                                ${validActions.canScanOut ? '' : 'disabled'}>
+                            <i class="fas fa-door-open fa-lg text-primary"></i>
+                            <div class="mt-1">
+                                <small class="fw-bold">Scan Out</small>
+                                <br>
+                                <small class="text-muted">Keluar Gudang</small>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button type="button" class="btn btn-outline-success w-100 scan-action-btn ${validActions.canUndoScanOut ? '' : 'disabled'}" 
+                                onclick="${validActions.canUndoScanOut ? `undoScanOut(${data.id})` : ''}" 
+                                ${validActions.canUndoScanOut ? '' : 'disabled'}>
+                            <i class="fas fa-undo fa-lg text-success"></i>
+                            <div class="mt-1">
+                                <small class="fw-bold">Undo Scan Out</small>
+                                <br>
+                                <small class="text-muted">Batalkan Keluar</small>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Scan In Actions -->
+            <div class="mb-3">
+                <h6 class="section-title mb-3">
+                    <i class="fas fa-sign-in-alt me-2"></i>Scan Loading Kendaraan
+                </h6>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <button type="button" class="btn btn-outline-info w-100 scan-action-btn ${validActions.canScanIn ? '' : 'disabled'}" 
+                                onclick="${validActions.canScanIn ? `scanInKendaraan(${data.id})` : ''}" 
+                                ${validActions.canScanIn ? '' : 'disabled'}>
+                            <i class="fas fa-truck-loading fa-lg text-info"></i>
+                            <div class="mt-1">
+                                <small class="fw-bold">Scan In</small>
+                                <br>
+                                <small class="text-muted">Loading Kendaraan</small>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button type="button" class="btn btn-outline-warning w-100 scan-action-btn ${validActions.canComplete ? '' : 'disabled'}" 
+                                onclick="${validActions.canComplete ? `completeLoading(${data.id})` : ''}" 
+                                ${validActions.canComplete ? '' : 'disabled'}>
+                            <i class="fas fa-check-circle fa-lg text-warning"></i>
+                            <div class="mt-1">
+                                <small class="fw-bold">Selesai</small>
+                                <br>
+                                <small class="text-muted">Loading Selesai</small>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Status Timeline -->
+            <div class="mt-4 p-3 bg-light rounded">
+                <h6 class="section-title mb-3">
+                    <i class="fas fa-list-ol me-2"></i>Status Timeline
+                </h6>
+                <div class="status-timeline">
+                    <div class="timeline-item ${data.status_scan_out === SCAN_STATUS.PRINTED ? 'active' : ''} ${data.status_scan_out === SCAN_STATUS.SCANNED_OUT || data.status_scan_out === SCAN_STATUS.SCANNED_IN ? 'completed' : ''}">
+                        <small class="fw-bold">Label Tercetak</small>
+                        <br>
+                        <small class="text-muted">Packing list sudah dicetak</small>
+                    </div>
+                    <div class="timeline-item ${data.status_scan_out === SCAN_STATUS.SCANNED_OUT ? 'active' : ''} ${data.status_scan_out === SCAN_STATUS.SCANNED_IN ? 'completed' : ''}">
+                        <small class="fw-bold">Scan Out Gudang</small>
+                        <br>
+                        <small class="text-muted">Barang keluar dari gudang</small>
+                    </div>
+                    <div class="timeline-item ${data.status_scan_in === SCAN_STATUS.SCANNED_IN ? 'active' : ''} ${data.status_scan_in === SCAN_STATUS.COMPLETED ? 'completed' : ''}">
+                        <small class="fw-bold">Scan In Kendaraan</small>
+                        <br>
+                        <small class="text-muted">Barang loading ke kendaraan</small>
+                    </div>
+                    <div class="timeline-item ${data.status_scan_in === SCAN_STATUS.COMPLETED ? 'active completed' : ''}">
+                        <small class="fw-bold">Selesai Loading</small>
+                        <br>
+                        <small class="text-muted">Proses loading selesai</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-3">
+            <small class="text-muted">
+                <i class="fas fa-info-circle me-1"></i>
+                Urutan proses: Print Label → Scan Out → Scan In → Complete
+            </small>
+        </div>
+    `;
+    
+    document.getElementById('scanActionsContent').innerHTML = modalContent;
+    document.getElementById('scanActionsModalLabel').innerHTML = `<i class="fas fa-qrcode me-2"></i>Scan - ${noPacking}`;
+    
+    const modal = new bootstrap.Modal(document.getElementById('scanActionsModal'));
+    modal.show();
+}
+
+async function scanOutGudang(packingId) {
+    if (!confirm('Konfirmasi Scan Out: Packing list akan dikonfirmasi keluar dari gudang?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${baseUrl}/packing-list/api/scan-out`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `packing_id=${packingId}`
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showSuccess('Scan Out berhasil! Packing list telah dikonfirmasi keluar gudang.');
+            // Close modal and refresh data
+            const modal = bootstrap.Modal.getInstance(document.getElementById('scanActionsModal'));
+            modal.hide();
+            loadPackingList();
+        } else {
+            showError('Gagal melakukan Scan Out: ' + (data.message || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showError('Terjadi kesalahan saat melakukan Scan Out');
+    }
+}
+
+async function undoScanOut(packingId) {
+    if (!confirm('Konfirmasi Undo Scan Out: Packing list akan dikembalikan ke status sebelumnya?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${baseUrl}/packing-list/api/undo-scan-out`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `packing_id=${packingId}`
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showSuccess('Undo Scan Out berhasil!');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('scanActionsModal'));
+            modal.hide();
+            loadPackingList();
+        } else {
+            showError('Gagal undo Scan Out: ' + (data.message || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showError('Terjadi kesalahan saat undo Scan Out');
+    }
+}
+
+async function scanInKendaraan(packingId) {
+    if (!confirm('Konfirmasi Scan In: Packing list akan dikonfirmasi loading ke kendaraan?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${baseUrl}/packing-list/api/scan-in`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `packing_id=${packingId}`
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showSuccess('Scan In berhasil! Packing list telah dikonfirmasi loading ke kendaraan.');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('scanActionsModal'));
+            modal.hide();
+            loadPackingList();
+        } else {
+            showError('Gagal melakukan Scan In: ' + (data.message || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showError('Terjadi kesalahan saat melakukan Scan In');
+    }
+}
+
+async function completeLoading(packingId) {
+    if (!confirm('Konfirmasi Selesai Loading: Packing list akan ditandai sebagai selesai loading?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${baseUrl}/packing-list/api/complete-loading`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `packing_id=${packingId}`
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showSuccess('Loading selesai! Packing list telah selesai diproses.');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('scanActionsModal'));
+            modal.hide();
+            loadPackingList();
+        } else {
+            showError('Gagal menandai selesai loading: ' + (data.message || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showError('Terjadi kesalahan saat menandai selesai loading');
+    }
+}
+
+function completeAllScans(packingId) {
+    if (!confirm('Konfirmasi Complete All: Semua proses scan akan diselesaikan sekaligus?')) {
+        return;
+    }
+    
+    fetch(`${baseUrl}/packing-list/api/complete-all`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `packing_id=${packingId}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('Semua proses scan berhasil diselesaikan!');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('scanActionsModal'));
+            modal.hide();
+            loadPackingList();
+        } else {
+            showError('Gagal complete all: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showError('Terjadi kesalahan saat complete all');
+    });
 }
 
 function loadBarangList() {
@@ -962,7 +1388,6 @@ function loadBarangList() {
 function renderBarangDropdown(barangList) {
     const select = document.getElementById('pilihBarang');
     
-    // Validasi barangList
     if (!barangList || !Array.isArray(barangList)) {
         select.innerHTML = '<option value="">Gagal memuat data barang</option>';
         return;
@@ -981,7 +1406,6 @@ function renderBarangDropdown(barangList) {
 function renderEditBarangDropdown(barangList) {
     const select = document.getElementById('edit_pilihBarang');
     
-    // Validasi barangList
     if (!barangList || !Array.isArray(barangList)) {
         select.innerHTML = '<option value="">Gagal memuat data barang</option>';
         return;
@@ -1248,13 +1672,11 @@ function editPacking(id) {
 }
 
 function showEditModal(data) {
-    // Validasi data
     if (!data) {
         alert('Data packing list tidak valid');
         return;
     }
 
-    // Isi form dengan data yang ada
     document.getElementById('edit_id').value = data.id || '';
     document.getElementById('edit_no_packing').value = data.no_packing || '';
     document.getElementById('edit_tanggal').value = data.tanggal || '';
@@ -1262,7 +1684,6 @@ function showEditModal(data) {
     document.getElementById('edit_alamat').value = data.alamat || '';
     document.getElementById('edit_keterangan').value = data.keterangan || '';
     
-    // Reset dan isi items
     editItems = [];
     editItemCounter = 0;
     
@@ -1280,7 +1701,6 @@ function showEditModal(data) {
     
     updateEditTabelItem();
     
-    // Show edit modal
     const modal = new bootstrap.Modal(document.getElementById('editPackingModal'));
     modal.show();
 }
@@ -1306,7 +1726,6 @@ function hapusPackingList() {
     .then(data => {
         if (data.success) {
             alert('Packing list berhasil dihapus!');
-            // Close modal and refresh page
             const modal = bootstrap.Modal.getInstance(document.getElementById('konfirmasiHapusModal'));
             modal.hide();
             loadPackingList();
@@ -1341,7 +1760,6 @@ function detailPacking(id) {
 }
 
 function showDetailModal(data) {
-    // Validasi data
     if (!data) {
         document.getElementById('detailPackingContent').innerHTML = `
             <div class="text-center py-4">
@@ -1354,8 +1772,8 @@ function showDetailModal(data) {
         return;
     }
 
-    const labelStatus = getLabelStatus(data.status_label);
-    const loadingStatus = getLoadingStatus(data.status_loading);
+    const scanOutStatus = getScanOutStatus(data.status_scan_out);
+    const scanInStatus = getScanInStatus(data.status_scan_in);
     
     const modalContent = `
         <div class="row">
@@ -1379,15 +1797,21 @@ function showDetailModal(data) {
                     <div class="text-dark">${data.alamat || '<span class="text-muted">-</span>'}</div>
                 </div>
                 <div class="info-group mb-3">
-                    <label class="form-label text-muted small mb-1">Status Label</label>
+                    <label class="form-label text-muted small mb-1">Status Scan Out</label>
                     <div>
-                        <span class="badge ${labelStatus.class}">${labelStatus.text}</span>
+                        <span class="badge ${scanOutStatus.class}">
+                            <i class="${scanOutStatus.icon} me-1"></i>${scanOutStatus.text}
+                        </span>
+                        ${data.scan_out_time ? `<br><small class="text-muted">${formatTime(data.scan_out_time)}</small>` : ''}
                     </div>
                 </div>
                 <div class="info-group mb-3">
-                    <label class="form-label text-muted small mb-1">Status Loading</label>
+                    <label class="form-label text-muted small mb-1">Status Scan In</label>
                     <div>
-                        <span class="badge ${loadingStatus.class}">${loadingStatus.text}</span>
+                        <span class="badge ${scanInStatus.class}">
+                            <i class="${scanInStatus.icon} me-1"></i>${scanInStatus.text}
+                        </span>
+                        ${data.scan_in_time ? `<br><small class="text-muted">${formatTime(data.scan_in_time)}</small>` : ''}
                     </div>
                 </div>
             </div>
@@ -1458,6 +1882,8 @@ function showDetailModal(data) {
                         <div>
                             <small class="text-muted">
                                 Packing list dibuat pada ${data.tanggal ? formatTanggal(data.tanggal) : 'N/A'}
+                                ${data.scan_out_time ? ` • Scan Out: ${formatTime(data.scan_out_time)}` : ''}
+                                ${data.scan_in_time ? ` • Scan In: ${formatTime(data.scan_in_time)}` : ''}
                             </small>
                         </div>
                     </div>
@@ -1473,7 +1899,6 @@ function showDetailModal(data) {
     modal.show();
 }
 
-// Helper function untuk format tanggal
 function formatTanggal(tanggal) {
     try {
         const options = { 
@@ -1485,6 +1910,18 @@ function formatTanggal(tanggal) {
     } catch (error) {
         console.error('Error formatting date:', error);
         return 'Invalid Date';
+    }
+}
+
+function formatTime(timeString) {
+    try {
+        return new Date(timeString).toLocaleTimeString('id-ID', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch (error) {
+        console.error('Error formatting time:', error);
+        return 'Invalid Time';
     }
 }
 
@@ -1505,7 +1942,6 @@ function printLabel(noPacking, packingId) {
     .then(data => {
         if (data.success) {
             alert(`Label untuk ${noPacking} berhasil digenerate`);
-            // Implement print functionality here
             console.log('Label data:', data.data);
         } else {
             alert('Gagal generate label: ' + (data.message || 'Unknown error'));
@@ -1523,15 +1959,6 @@ function printLabelFromDetail() {
     } else {
         alert('Tidak ada packing list yang dipilih');
     }
-}
-
-function scanPacking(id) {
-    if (!id) {
-        alert('ID packing tidak valid');
-        return;
-    }
-    // Redirect to scan page with packing ID
-    window.location.href = `${baseUrl}/scan?packing_id=${id}`;
 }
 
 function printSelectedLabels() {
@@ -1558,7 +1985,6 @@ function printSelectedLabels() {
     .then(data => {
         if (data.success) {
             alert(`Berhasil generate ${data.data ? data.data.total : packingIds.length} label untuk: ${packingNumbers.join(', ')}`);
-            // Implement print functionality here
             console.log('Multiple labels data:', data.data);
         } else {
             alert('Gagal generate label: ' + (data.message || 'Unknown error'));
@@ -1580,13 +2006,12 @@ function refreshData() {
 }
 
 function showError(message) {
-    // Implement error notification
     console.error('Error:', message);
     alert('Error: ' + message);
 }
 
 function showSuccess(message) {
-    // Implement success notification
     console.log('Success:', message);
+    alert('Success: ' + message);
 }
 </script>

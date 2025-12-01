@@ -815,6 +815,10 @@ ob_start();
                         <i class="fas fa-tachometer-alt"></i>
                         <span>Dashboard</span>
                     </a>
+					                    <a class="nav-link <?php echo (isset($active_menu) && $active_menu == 'kategori') ? 'active' : ''; ?>" href="<?php echo site_url('kategori'); ?>">
+                        <i class="fas fa-tags"></i>
+                        <span>Kategori Barang</span>
+                    </a>
                     <a class="nav-link <?php echo (isset($active_menu) && $active_menu == 'barang') ? 'active' : ''; ?>" href="<?php echo site_url('barang'); ?>">
                         <i class="fas fa-boxes"></i>
                         <span>Data Barang</span>
@@ -839,10 +843,7 @@ ob_start();
                         <i class="fas fa-chart-bar"></i>
                         <span>Laporan Stok</span>
                     </a>
-                    <a class="nav-link <?php echo (isset($active_menu) && $active_menu == 'kategori') ? 'active' : ''; ?>" href="<?php echo site_url('kategori'); ?>">
-                        <i class="fas fa-tags"></i>
-                        <span>Kategori Barang</span>
-                    </a>
+
                 </nav>
             </div>
             

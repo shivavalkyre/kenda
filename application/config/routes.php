@@ -1,98 +1,55 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-/*
-| -------------------------------------------------------------------------
-| URI ROUTING
-| -------------------------------------------------------------------------
-| This file lets you re-map URI requests to specific controller functions.
-|
-| Typically there is a one-to-one relationship between a URL string
-| and its corresponding controller class/method. The segments in a
-| URL normally follow this pattern:
-|
-|	example.com/class/method/id/
-|
-| In some instances, however, you may want to remap this relationship
-| so that a different class/function is called than the one
-| corresponding to the URL.
-|
-| Please see the user guide for complete details:
-|
-|	https://codeigniter.com/userguide3/general/routing.html
-|
-| -------------------------------------------------------------------------
-| RESERVED ROUTES
-| -------------------------------------------------------------------------
-|
-| There are three reserved routes:
-|
-|	$route['default_controller'] = 'welcome';
-|
-| This route indicates which controller class should be loaded if the
-| URI contains no data. In the above example, the "welcome" class
-| would be loaded.
-|
-|	$route['404_override'] = 'errors/page_missing';
-|
-| This route will tell the Router which controller/method to use if those
-| provided in the URL cannot be matched to a valid route.
-|
-|	$route['translate_uri_dashes'] = FALSE;
-|
-| This is not exactly a route, but allows you to automatically route
-| controller and method names that contain dashes. '-' isn't a valid
-| class or method name character, so it requires translation.
-| When you set this option to TRUE, it will replace ALL dashes in the
-| controller and method URI segments.
-|
-| Examples:	my-controller/index	-> my_controller/index
-|		my-controller/my-method	-> my_controller/my_method
-*/
-$route['default_controller'] = 'dashboard';
+// Gudang Routes
+$route['dashboard'] = 'Gudang/index';
+$route['stok'] = 'Gudang/stok';
+$route['barang'] = 'Gudang/barang';
+$route['scan'] = 'Gudang/scan';
+$route['packing_list'] = 'Gudang/packing_list';
+$route['kategori'] = 'Gudang/kategori';
+
+// API Routes for Kategori
+$route['kategori/api/list'] = 'Gudang/api_list_kategori';
+$route['kategori/api/statistics'] = 'Gudang/api_kategori_statistics';
+$route['kategori/api/detail/(:num)'] = 'Gudang/api_detail_kategori/$1';
+$route['kategori/simpan'] = 'Gudang/simpan_kategori';
+$route['kategori/update'] = 'Gudang/update_kategori';
+$route['kategori/hapus/(:num)'] = 'Gudang/hapus_kategori/$1';
+
+// API Routes for Packing List
+$route['packing-list/api/list'] = 'Gudang/api_list_packing';
+$route['packing-list/api/detail/(:num)'] = 'Gudang/api_detail_packing/$1';
+$route['packing-list/api/barang'] = 'Gudang/api_list_barang';
+$route['packing-list/simpan'] = 'Gudang/simpan_packing';
+$route['packing-list/update'] = 'Gudang/update_packing';
+$route['packing-list/delete/(:num)'] = 'Gudang/delete_packing/$1';
+
+// API Routes for Scan Actions
+$route['packing-list/api/scan-out'] = 'Gudang/api_scan_out';
+$route['packing-list/api/undo-scan-out'] = 'Gudang/api_undo_scan_out';
+$route['packing-list/api/scan-in'] = 'Gudang/api_scan_in';
+$route['packing-list/api/complete-loading'] = 'Gudang/api_complete_loading';
+$route['packing-list/api/cetak-label'] = 'Gudang/api_cetak_label';
+
+// API Routes for Scan Module
+$route['packing-list/api/check-label/(:any)'] = 'Gudang/api_check_label/$1';
+$route['packing-list/api/process-scan'] = 'Gudang/api_process_scan';
+$route['packing-list/api/today-scan-stats'] = 'Gudang/api_today_scan_stats';
+
+$route['gudang/api_detail_barang/(:any)'] = 'Gudang/api_detail_barang/$1';
+$route['gudang/tambah_barang'] = 'Gudang/tambah_barang';
+$route['gudang/update_barang'] = 'Gudang/update_barang';
+$route['gudang/hapus_barang/(:any)'] = 'Gudang/hapus_barang/$1';
+$route['gudang/stok_awal'] = 'Gudang/stok_awal';
+$route['gudang/barang_masuk'] = 'Gudang/barang_masuk';
+$route['gudang/export_barang'] = 'Gudang/export_barang';
+
+
+
+
+
+// Default Route
+$route['default_controller'] = 'Gudang';
 $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
-
-// Auth routes
-$route['auth/login'] = 'auth/login';
-$route['auth/logout'] = 'auth/logout';
-
-// Dashboard
-$route['dashboard'] = 'dashboard/index';
-
-// Laporan Routes
-$route['stok'] = 'stok/index';
-$route['laporan/api/stok'] = 'stok/get_data_stok';
-$route['laporan/api/chart'] = 'stok/get_chart_data';
-$route['laporan/api/summary'] = 'stok/get_summary';
-$route['laporan/export-stok'] = 'stok/export_stok';
-
-// Scan Routes
-$route['scan'] = 'scan/index';
-$route['scan/process'] = 'scan/process_scan';
-$route['scan/confirm'] = 'scan/confirm_scan';
-$route['scan/stats'] = 'scan/get_today_stats';
-$route['scan/recent'] = 'scan/get_recent_scans';
-$route['scan/label-info/(:any)'] = 'scan/get_label_info/$1';
-
-
-// Packing List Routes
-$route['packing-list'] = 'packing_list/index';
-$route['packing-list/simpan'] = 'packing_list/simpan';
-$route['packing-list/api/list'] = 'packing_list/get_packing_list';
-$route['packing-list/api/detail/(:num)'] = 'packing_list/detail/$1';
-$route['packing-list/api/cetak-label'] = 'packing_list/cetak_label';
-$route['packing-list/api/update-status'] = 'packing_list/update_status';
-$route['packing-list/api/barang'] = 'packing_list/get_barang_list';
-$route['packing-list/api/statistics'] = 'packing_list/get_statistics';
-$route['packing-list/hapus/(:num)'] = 'packing_list/hapus/$1';
-$route['packing-list/export'] = 'packing_list/export';
-
-// Kategori Routes
-$route['kategori'] = 'kategori/index';
-$route['kategori/simpan'] = 'kategori/simpan';
-$route['kategori/update'] = 'kategori/update';
-$route['kategori/hapus/(:num)'] = 'kategori/hapus/$1';
-$route['kategori/api/list'] = 'kategori/get_kategori';
-$route['kategori/api/detail/(:num)'] = 'kategori/detail/$1';
-$route['kategori/api/statistics'] = 'kategori/get_statistics';

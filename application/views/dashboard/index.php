@@ -10,25 +10,25 @@
 <!-- Stats Grid -->
 <div class="stats-grid">
     <div class="stat-card">
-        <div class="stat-number"><?php echo $total_barang ?? '1,248'; ?></div>
+        <div class="stat-number"><?php echo isset($total_barang) ? number_format($total_barang) : '0'; ?></div>
         <div class="stat-label">Total Barang</div>
-        <span class="stat-trend trend-up">+125 dari target</span>
+        <span class="stat-trend trend-up">Stok tersedia</span>
     </div>
     
     <div class="stat-card">
-        <div class="stat-number"><?php echo $total_tube ?? '856'; ?></div>
+        <div class="stat-number"><?php echo isset($total_tube) ? number_format($total_tube) : '0'; ?></div>
         <div class="stat-label">Total Tube</div>
         <span class="stat-trend trend-up">Stok tersedia</span>
     </div>
     
     <div class="stat-card">
-        <div class="stat-number"><?php echo $total_tire ?? '392'; ?></div>
+        <div class="stat-number"><?php echo isset($total_tire) ? number_format($total_tire) : '0'; ?></div>
         <div class="stat-label">Total Tire</div>
         <span class="stat-trend trend-up">Stok tersedia</span>
     </div>
     
     <div class="stat-card">
-        <div class="stat-number"><?php echo $packing_pending ?? '8'; ?></div>
+        <div class="stat-number"><?php echo isset($packing_pending) ? number_format($packing_pending) : '0'; ?></div>
         <div class="stat-label">Packing Pending</div>
         <span class="stat-trend trend-down">Perlu diproses</span>
     </div>
@@ -107,36 +107,24 @@
         <div class="activity-card">
             <h4 class="section-title">Aktivitas Terbaru</h4>
             <div class="activity-list">
-                <div class="activity-item">
-                    <div class="activity-time">10:30</div>
-                    <div class="activity-content">
-                        <strong>Packing List #PL001 dibuat</strong> - 50 unit Tire
-                    </div>
-                </div>
-                <div class="activity-item">
-                    <div class="activity-time">09:15</div>
-                    <div class="activity-content">
-                        <strong>Label #LBL002 discan keluar</strong> - 30 unit Tube
-                    </div>
-                </div>
-                <div class="activity-item">
-                    <div class="activity-time">08:45</div>
-                    <div class="activity-content">
-                        <strong>Barang masuk dari Supplier A</strong> - 100 unit Tire
-                    </div>
-                </div>
-                <div class="activity-item">
-                    <div class="activity-time">08:30</div>
-                    <div class="activity-content">
-                        <strong>Label #LBL001 loading completed</strong>
-                    </div>
-                </div>
-                <div class="activity-item">
-                    <div class="activity-time">07:15</div>
-                    <div class="activity-content">
-                        <strong>Stok Tube diperbarui</strong> - Saldo: 856 unit
-                    </div>
-                </div>
+                <?php
+                // In a real application, you would fetch this from the database
+                // For demo purposes, we'll use static data
+                $activities = [
+                    ['time' => '10:30', 'content' => '<strong>Packing List #PL001 dibuat</strong> - 50 unit Tire'],
+                    ['time' => '09:15', 'content' => '<strong>Label #LBL002 discan keluar</strong> - 30 unit Tube'],
+                    ['time' => '08:45', 'content' => '<strong>Barang masuk dari Supplier A</strong> - 100 unit Tire'],
+                    ['time' => '08:30', 'content' => '<strong>Label #LBL001 loading completed</strong>'],
+                    ['time' => '07:15', 'content' => '<strong>Stok Tube diperbarui</strong> - Saldo: ' . ($total_tube ?? 0) . ' unit']
+                ];
+                
+                foreach ($activities as $activity) {
+                    echo '<div class="activity-item">';
+                    echo '    <div class="activity-time">' . $activity['time'] . '</div>';
+                    echo '    <div class="activity-content">' . $activity['content'] . '</div>';
+                    echo '</div>';
+                }
+                ?>
             </div>
         </div>
     </div>
@@ -158,64 +146,37 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>PL001</td>
-                            <td>2024-03-20</td>
-                            <td>
-                                <span class="badge bg-primary me-1">15 Tube</span>
-                                <span class="badge bg-success">35 Tire</span>
-                            </td>
-                            <td><span class="scan-status scan-completed">Tercetak</span></td>
-                            <td><span class="scan-status scan-loaded">Selesai</span></td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-print"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>PL002</td>
-                            <td>2024-03-20</td>
-                            <td>
-                                <span class="badge bg-primary">30 Tube</span>
-                            </td>
-                            <td><span class="scan-status scan-completed">Tercetak</span></td>
-                            <td><span class="scan-status scan-pending">Pending</span></td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-print"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>PL003</td>
-                            <td>2024-03-19</td>
-                            <td>
-                                <span class="badge bg-success">25 Tire</span>
-                            </td>
-                            <td><span class="scan-status scan-pending">Belum</span></td>
-                            <td><span class="scan-status scan-pending">Pending</span></td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-print"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>PL004</td>
-                            <td>2024-03-19</td>
-                            <td>
-                                <span class="badge bg-primary me-1">20 Tube</span>
-                                <span class="badge bg-success">10 Tire</span>
-                            </td>
-                            <td><span class="scan-status scan-completed">Tercetak</span></td>
-                            <td><span class="scan-status scan-completed">Loading</span></td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-success">
-                                    <i class="fas fa-shipping-fast"></i>
-                                </button>
-                            </td>
-                        </tr>
+                        <?php
+                        // In a real application, you would fetch this from the database
+                        $packing_items = [
+                            ['no' => 'PL001', 'date' => '2024-03-20', 'tube' => 15, 'tire' => 35, 'label_status' => 'Tercetak', 'loading_status' => 'Selesai'],
+                            ['no' => 'PL002', 'date' => '2024-03-20', 'tube' => 30, 'tire' => 0, 'label_status' => 'Tercetak', 'loading_status' => 'Pending'],
+                            ['no' => 'PL003', 'date' => '2024-03-19', 'tube' => 0, 'tire' => 25, 'label_status' => 'Belum', 'loading_status' => 'Pending'],
+                            ['no' => 'PL004', 'date' => '2024-03-19', 'tube' => 20, 'tire' => 10, 'label_status' => 'Tercetak', 'loading_status' => 'Loading']
+                        ];
+                        
+                        foreach ($packing_items as $item) {
+                            echo '<tr>';
+                            echo '    <td>' . $item['no'] . '</td>';
+                            echo '    <td>' . $item['date'] . '</td>';
+                            echo '    <td>';
+                            if ($item['tube'] > 0) {
+                                echo '<span class="badge bg-primary me-1">' . $item['tube'] . ' Tube</span>';
+                            }
+                            if ($item['tire'] > 0) {
+                                echo '<span class="badge bg-success">' . $item['tire'] . ' Tire</span>';
+                            }
+                            echo '    </td>';
+                            echo '    <td><span class="scan-status scan-' . ($item['label_status'] == 'Tercetak' ? 'completed' : 'pending') . '">' . $item['label_status'] . '</span></td>';
+                            echo '    <td><span class="scan-status scan-' . strtolower($item['loading_status']) . '">' . $item['loading_status'] . '</span></td>';
+                            echo '    <td>';
+                            echo '        <button class="btn btn-sm btn-outline-primary">';
+                            echo '            <i class="fas fa-print"></i>';
+                            echo '        </button>';
+                            echo '    </td>';
+                            echo '</tr>';
+                        }
+                        ?>
                     </tbody>
                 </table>
             </div>
@@ -226,21 +187,25 @@
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Data contoh untuk grafik
+    // Data dari PHP
+    const totalTube = <?php echo isset($total_tube) ? $total_tube : 0; ?>;
+    const totalTire = <?php echo isset($total_tire) ? $total_tire : 0; ?>;
+    
+    // Data contoh untuk grafik (dalam aplikasi nyata, ini akan diambil dari database)
     const tubeData = [
-        { name: 'Tube Standard 17"', value: 350 },
-        { name: 'Tube Heavy Duty 19"', value: 230 },
-        { name: 'Tube Racing 15"', value: 147 },
-        { name: 'Tube Truck 22"', value: 98 },
-        { name: 'Tube Motor 14"', value: 31 }
+        { name: 'Tube Standard 17"', value: Math.round(totalTube * 0.4) },
+        { name: 'Tube Heavy Duty 19"', value: Math.round(totalTube * 0.27) },
+        { name: 'Tube Racing 15"', value: Math.round(totalTube * 0.17) },
+        { name: 'Tube Truck 22"', value: Math.round(totalTube * 0.11) },
+        { name: 'Tube Motor 14"', value: Math.round(totalTube * 0.05) }
     ];
 
     const tireData = [
-        { name: 'Tire Radial 205/55/R16', value: 224 },
-        { name: 'Tire Offroad 265/70/R16', value: 135 },
-        { name: 'Tire Sport 225/45/R17', value: 87 },
-        { name: 'Tire Truck 275/70/R22', value: 56 },
-        { name: 'Tire ECO 185/65/R15', value: 42 }
+        { name: 'Tire Radial 205/55/R16', value: Math.round(totalTire * 0.35) },
+        { name: 'Tire Offroad 265/70/R16', value: Math.round(totalTire * 0.25) },
+        { name: 'Tire Sport 225/45/R17', value: Math.round(totalTire * 0.20) },
+        { name: 'Tire Truck 275/70/R22', value: Math.round(totalTire * 0.15) },
+        { name: 'Tire ECO 185/65/R15', value: Math.round(totalTire * 0.05) }
     ];
 
     // Grafik Tube
@@ -368,7 +333,7 @@ document.addEventListener('DOMContentLoaded', function() {
             {
                 name: 'Tube',
                 type: 'bar',
-                data: [856, 100, 245, 180],
+                data: [totalTube, Math.round(totalTube * 0.12), Math.round(totalTube * 0.29), Math.round(totalTube * 0.21)],
                 itemStyle: {
                     color: '#007bff'
                 },
@@ -379,7 +344,7 @@ document.addEventListener('DOMContentLoaded', function() {
             {
                 name: 'Tire',
                 type: 'bar',
-                data: [392, 50, 187, 120],
+                data: [totalTire, Math.round(totalTire * 0.13), Math.round(totalTire * 0.48), Math.round(totalTire * 0.31)],
                 itemStyle: {
                     color: '#28a745'
                 },
@@ -423,29 +388,3 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-
-<style>
-.echarts-for-react, .echarts { width: 100% !important; }
-#tubeChart, #tireChart, #comparisonChart { width: 100%; }
-@media (max-width: 768px) { 
-    #tubeChart, #tireChart, #comparisonChart { height: 250px !important; } 
-}
-@media (max-width: 480px) { 
-    #tubeChart, #tireChart, #comparisonChart { height: 200px !important; } 
-}
-
-.scan-status { padding: 4px 8px; border-radius: 4px; font-size: .8rem; font-weight: 500; }
-.scan-pending { background:#fff3cd;color:#856404; }
-.scan-completed { background:#d1ecf1;color:#0c5460; }
-.scan-loaded { background:#d4edda;color:#155724; }
-
-/* --- FIX: Samakan tinggi semua tombol Quick Actions --- */
-.btn-kenda,
-.btn-kenda-red {
-    height: 55px;                /* tinggi seragam */
-    display: flex;               /* agar teks & ikon rata tengah */
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-}
-</style>
