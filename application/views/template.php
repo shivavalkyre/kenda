@@ -11,15 +11,31 @@ ob_start();
     <link rel="icon" href="<?= base_url('assets/images/logo/icon.png') ?>" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+	<!-- SweetAlert2 -->
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Load ECharts Library -->
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <style>
+
+		/* DI AWAL CSS template.php, tambahkan: */
+
         :root {
             --kenda-black: #000000;
             --kenda-red: #ff0000;
             --kenda-white: #ffffff;
             --kenda-dark-gray: #333333;
             --kenda-light-gray: #f5f5f5;
+
+			/* Tambahkan z-index variables */
+		--z-sidebar: 1000;
+		--z-navbar: 1100;
+		--z-sidebar-backdrop: 1040;
+		--z-dropdown: 1200;
+		--z-modal-backdrop: 1250;
+		--z-modal: 1300;
+		--z-tooltip: 1400;
+		--z-toast: 1500;
         }
         
         * {
@@ -757,6 +773,40 @@ ob_start();
                 position: absolute;
             }
         }
+
+		/* Navbar */
+.navbar-kenda {
+    z-index: var(--z-navbar);
+}
+
+/* Sidebar */
+.sidebar {
+    z-index: var(--z-sidebar);
+}
+
+/* Sidebar backdrop */
+.sidebar-backdrop {
+    z-index: var(--z-sidebar-backdrop);
+}
+
+/* Dropdown menu */
+.navbar-nav .dropdown-menu {
+    z-index: var(--z-dropdown) !important;
+}
+
+/* Modal (tambahkan di template.php) */
+.modal {
+    z-index: var(--z-modal) !important;
+}
+
+.modal-backdrop {
+    z-index: var(--z-modal-backdrop) !important;
+}
+
+/* Tooltip */
+.tooltip {
+    z-index: var(--z-tooltip) !important;
+}
     </style>
 </head>
 <body>
