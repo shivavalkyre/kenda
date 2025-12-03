@@ -157,6 +157,7 @@ class Gudang_model extends CI_Model {
         $query = $this->db->get();
         return $query->result_array();
     }
+
     
     /**
      * Get barang with pagination
@@ -366,21 +367,79 @@ class Gudang_model extends CI_Model {
         return $this->db->count_all_results();
     }
 
-    public function get_packing_detail($id) {
-        $this->db->where('id', $id);
-        $packing = $this->db->get('packing_list')->row_array();
+    // public function get_packing_detail($id) {
+    //     $this->db->where('id', $id);
+    //     $packing = $this->db->get('packing_list')->row_array();
         
-        if ($packing) {
-            $this->db->select('pi.*, b.nama_barang, b.kategori, b.satuan');
-            $this->db->from('packing_items pi');
-            $this->db->join('barang b', 'pi.kode_barang = b.kode_barang', 'left');
-            $this->db->where('pi.packing_id', $id);
-            $packing['items'] = $this->db->get()->result_array();
-            $packing['total_items'] = array_sum(array_column($packing['items'], 'qty'));
-        }
+    //     if ($packing) {
+    //         $this->db->select('pi.*,b.kode_barang, b.nama_barang, b.kategori, b.satuan');
+    //         $this->db->from('packing_items pi');
+    //         $this->db->join('barang b', 'pi.kode_barang = b.kode_barang', 'left');
+    //         $this->db->where('pi.packing_id', $id);
+    //         $packing['items'] = $this->db->get()->result_array();
+    //         $packing['total_items'] = array_sum(array_column($packing['items'], 'qty'));
+    //     }
         
-        return $packing;
-    }
+    //     return $packing;
+    // }
+
+	public function get_packing_detail($id) {
+		$this->db->where('id', $id);
+		$packing = $this->db->get('packing_list')->row_array();
+		
+		if ($packing) {
+			// Format tanggal
+			$packing['tanggal_formatted'] = date('j F Y', strtotime($packing['tanggal']));
+			$packing['created_at_formatted'] = date('j F Y', strtotime($packing['created_at']));
+			
+			// Ambil data customer dan alamat
+			$packing['nama_customer'] = isset($packing['customer']) ? $packing['customer'] : 'Tidak diketahui';
+			$packing['alamat'] = isset($packing['alamat_pengiriman']) ? $packing['alamat_pengiriman'] : '-';
+			
+			// Ambil item
+			$this->db->select('pi.*, b.kode_barang as kode, b.nama_barang as nama, b.kategori, b.satuan');
+			$this->db->from('packing_items pi');
+			$this->db->join('barang b', 'pi.kode_barang = b.kode_barang', 'left');
+			$this->db->where('pi.packing_id', $id);
+			$items = $this->db->get()->result_array();
+			
+			$packing['items'] = $items;
+			
+			// Hitung total items dengan konversi ke integer
+			$total_qty = 0;
+			$category_summary = [];
+			$unique_items = [];
+			
+			foreach ($items as $item) {
+				// Konversi qty ke integer
+				$qty = (int)$item['qty'];
+				$total_qty += $qty;
+				
+				// Hitung summary per kategori
+				$kategori = $item['kategori'] ?: 'Uncategorized';
+				if (!isset($category_summary[$kategori])) {
+					$category_summary[$kategori] = 0;
+				}
+				$category_summary[$kategori] += $qty;
+				
+				// Hitung item unik
+				$key = $item['kode_barang'];
+				if (!isset($unique_items[$key])) {
+					$unique_items[$key] = $item;
+				}
+			}
+			
+			$packing['total_items'] = $total_qty;
+			$packing['category_summary'] = $category_summary;
+			$packing['total_unique_items'] = count($unique_items);
+			
+			// Status scan
+			$packing['status_scan_out'] = isset($packing['status_scan_out']) ? $packing['status_scan_out'] : 'Label_foreach';
+			$packing['status_scan_in'] = isset($packing['status_scan_in']) ? $packing['status_scan_in'] : 'Return Loading';
+		}
+		
+		return $packing ?: [];
+	}
 
     public function save_packing_list($data, $items) {
         $this->db->trans_start();
@@ -458,26 +517,26 @@ class Gudang_model extends CI_Model {
         return $this->db->trans_status();
     }
 
-    public function update_scan_status($packing_id, $status, $time_field = null, $clear_time = false) {
-        $data = [];
+    // public function update_scan_status($packing_id, $status, $time_field = null, $clear_time = false) {
+    //     $data = [];
         
-        if (strpos($status, 'scanned_out') !== false || $status === 'printed') {
-            $data['status_scan_out'] = $status;
-        } elseif (strpos($status, 'scanned_in') !== false || $status === 'completed') {
-            $data['status_scan_in'] = $status;
-        }
+    //     if (strpos($status, 'scanned_out') !== false || $status === 'printed') {
+    //         $data['status_scan_out'] = $status;
+    //     } elseif (strpos($status, 'scanned_in') !== false || $status === 'completed') {
+    //         $data['status_scan_in'] = $status;
+    //     }
         
-        if ($time_field && !$clear_time) {
-            $data[$time_field] = date('Y-m-d H:i:s');
-        } elseif ($time_field && $clear_time) {
-            $data[$time_field] = null;
-        }
+    //     if ($time_field && !$clear_time) {
+    //         $data[$time_field] = date('Y-m-d H:i:s');
+    //     } elseif ($time_field && $clear_time) {
+    //         $data[$time_field] = null;
+    //     }
         
-        $data['updated_at'] = date('Y-m-d H:i:s');
+    //     $data['updated_at'] = date('Y-m-d H:i:s');
         
-        $this->db->where('id', $packing_id);
-        return $this->db->update('packing_list', $data);
-    }
+    //     $this->db->where('id', $packing_id);
+    //     return $this->db->update('packing_list', $data);
+    // }
 
     // ==================== KATEGORI METHODS ====================
 
@@ -629,25 +688,441 @@ class Gudang_model extends CI_Model {
         return $this->db->get('packing_list')->row_array();
     }
 
-    public function get_today_scan_stats() {
-        $today = date('Y-m-d');
+    // public function get_today_scan_stats() {
+    //     $today = date('Y-m-d');
         
-        $this->db->where('DATE(scan_out_time)', $today);
-        $this->db->where('status_scan_out', 'scanned_out');
-        $scan_out_today = $this->db->count_all_results('packing_list');
+    //     $this->db->where('DATE(scan_out_time)', $today);
+    //     $this->db->where('status_scan_out', 'scanned_out');
+    //     $scan_out_today = $this->db->count_all_results('packing_list');
         
-        $this->db->where('DATE(scan_in_time)', $today);
-        $this->db->where('status_scan_in', 'scanned_in');
-        $scan_in_today = $this->db->count_all_results('packing_list');
+    //     $this->db->where('DATE(scan_in_time)', $today);
+    //     $this->db->where('status_scan_in', 'scanned_in');
+    //     $scan_in_today = $this->db->count_all_results('packing_list');
         
-        $this->db->where('DATE(scan_in_time)', $today);
-        $this->db->where('status_scan_in', 'completed');
-        $completed_today = $this->db->count_all_results('packing_list');
+    //     $this->db->where('DATE(scan_in_time)', $today);
+    //     $this->db->where('status_scan_in', 'completed');
+    //     $completed_today = $this->db->count_all_results('packing_list');
         
-        return [
-            'scan_out_today' => $scan_out_today,
-            'scan_in_today' => $scan_in_today,
-            'completed_today' => $completed_today
-        ];
-    }
+    //     return [
+    //         'scan_out_today' => $scan_out_today,
+    //         'scan_in_today' => $scan_in_today,
+    //         'completed_today' => $completed_today
+    //     ];
+    // }
+
+	// ==================== PACKING CETAK METHODS ====================
+
+				/**
+				 * Get packing by ID (for cetak)
+				 */
+				public function getPackingById($id) {
+					$this->db->where('id', $id);
+					$query = $this->db->get('packing_list');
+					return $query->row();
+				}
+
+				/**
+				* Get multiple packing by IDs
+				*/
+				public function getPackingByIds($ids) {
+					if (empty($ids)) {
+						return [];
+					}
+					
+					$this->db->where_in('id', $ids);
+					$query = $this->db->get('packing_list');
+					return $query->result();
+				}
+
+				/**
+				* Get packing items
+				*/
+				public function getPackingItems($packingId) {
+					$this->db->where('packing_id', $packingId);
+					return $this->db->get('packing_items')->result();
+				}
+
+				/**
+				* Update packing status
+				*/
+				public function updatePackingStatus($packingId, $status) {
+					$data = [
+						'status_scan_out' => $status,
+						'updated_at' => date('Y-m-d H:i:s')
+					];
+					
+					$this->db->where('id', $packingId);
+					return $this->db->update('packing_list', $data);
+				}
+
+				/**
+				* Get packing status
+				*/
+				public function getPackingStatus($packingId) {
+					$this->db->select('status_scan_out');
+					$this->db->where('id', $packingId);
+					$query = $this->db->get('packing_list');
+					$result = $query->row();
+					return $result ? $result->status_scan_out : null;
+				}
+
+				 // ==================== SCAN-RELATED METHODS ====================
+    
+			/**
+			 * Get today's scan statistics
+			 */
+			public function get_today_scan_stats() {
+				$today = date('Y-m-d');
+				
+				$stats = [
+					'scanned_today' => $this->db
+						->where('DATE(scan_out_time)', $today)
+						->where('status_scan_out', 'scanned_out')
+						->count_all_results('packing_list'),
+					
+					'loaded_today' => $this->db
+						->where('DATE(scan_in_time)', $today)
+						->where('status_scan_in', 'scanned_in')
+						->count_all_results('packing_list'),
+					
+					'completed_today' => $this->db
+						->where('DATE(scan_in_time)', $today)
+						->where('status_scan_in', 'completed')
+						->count_all_results('packing_list')
+				];
+				
+				return $stats;
+			}
+			
+			/**
+			 * Get recent scan activities
+			 */
+			public function get_recent_scans($limit = 5) {
+				$this->db->select('sl.*, p.no_packing, p.customer');
+				$this->db->from('scan_logs sl');
+				$this->db->join('packing_list p', 'sl.packing_id = p.id', 'left');
+				$this->db->order_by('sl.timestamp', 'DESC');
+				$this->db->limit($limit);
+				
+				return $this->db->get()->result_array();
+			}
+			
+			/**
+			 * Get packing by ID untuk scan
+			 */
+			public function get_packing_for_scan($id) {
+				$this->db->select('p.*, COUNT(pi.id) as jumlah_item');
+				$this->db->from('packing_list p');
+				$this->db->join('packing_items pi', 'p.id = pi.packing_id', 'left');
+				$this->db->where('p.id', $id);
+				$this->db->group_by('p.id');
+				
+				$query = $this->db->get();
+				return $query->row_array();
+			}
+			
+			/**
+			 * Update scan status
+			 */
+			public function update_scan_status($packing_id, $data) {
+				$this->db->where('id', $packing_id);
+				return $this->db->update('packing_list', $data);
+			}
+			
+			/**
+			 * Log scan activity
+			 */
+			public function log_scan_activity($log_data) {
+				return $this->db->insert('scan_logs', $log_data);
+			}
+
+			public function get_packing_by_ids($ids)
+			{
+				if (empty($ids) || !is_array($ids)) {
+					return [];
+				}
+				
+				$this->db->select('p.*, 
+					(SELECT COUNT(*) FROM packing_items WHERE packing_id = p.id) as jumlah_item');
+				$this->db->from('packing_list p');
+				$this->db->where_in('p.id', $ids);
+				$this->db->order_by('FIELD(p.id, ' . implode(',', $ids) . ')');
+				
+				return $this->db->get()->result();
+			}
+
+			// Alternative jika FIELD() tidak support (MySQL)
+			public function get_packing_by_ids_simple($ids)
+			{
+				if (empty($ids) || !is_array($ids)) {
+					return [];
+				}
+				
+				$this->db->select('p.*, 
+					(SELECT COUNT(*) FROM packing_items WHERE packing_id = p.id) as jumlah_item');
+				$this->db->from('packing_list p');
+				$this->db->where_in('p.id', $ids);
+				$this->db->order_by('p.created_at', 'DESC');
+				
+				return $this->db->get()->result();
+			}
+
+
+			// ==================== LABEL METHODS ====================
+
+			/**
+			 * Generate label code
+			 */
+			public function generate_label_code($prefix = 'LBL', $length = 6) {
+				do {
+					$random = strtoupper(bin2hex(random_bytes(ceil($length/2))));
+					$label_code = $prefix . substr($random, 0, $length);
+					
+					// Check if exists
+					$this->db->where('label_code', $label_code);
+					$exists = $this->db->count_all_results('labels') > 0;
+				} while ($exists);
+				
+				return $label_code;
+			}
+
+			/**
+			 * Create labels for packing list
+			 */
+			public function create_labels_for_packing($packing_id, $label_count = 1, $label_type = 'single') {
+				$this->db->trans_start();
+				
+				// Check if packing exists
+				$this->db->where('id', $packing_id);
+				$packing = $this->db->get('packing_list')->row_array();
+				
+				if (!$packing) {
+					return false;
+				}
+				
+				$labels = [];
+				
+				// Create master label for multi-label system
+				if ($label_count > 1) {
+					$master_label = [
+						'label_code' => $this->generate_label_code('MLBL'),
+						'packing_id' => $packing_id,
+						'label_type' => 'master',
+						'status' => 'active',
+						'created_at' => date('Y-m-d H:i:s')
+					];
+					
+					$this->db->insert('labels', $master_label);
+					$master_label_id = $this->db->insert_id();
+					
+					// Create child labels
+					for ($i = 1; $i <= $label_count; $i++) {
+						$child_label = [
+							'label_code' => $this->generate_label_code('CLBL'),
+							'packing_id' => $packing_id,
+							'label_type' => 'child',
+							'parent_label_id' => $master_label_id,
+							'status' => 'active',
+							'created_at' => date('Y-m-d H:i:s')
+						];
+						
+						$this->db->insert('labels', $child_label);
+						$labels[] = array_merge($child_label, ['id' => $this->db->insert_id()]);
+					}
+					
+					// Update master label status
+					$this->db->where('id', $master_label_id);
+					$this->db->update('labels', ['total_children' => $label_count]);
+					
+				} else {
+					// Single label system
+					$label_data = [
+						'label_code' => $this->generate_label_code('LBL'),
+						'packing_id' => $packing_id,
+						'label_type' => 'single',
+						'status' => 'active',
+						'created_at' => date('Y-m-d H:i:s')
+					];
+					
+					$this->db->insert('labels', $label_data);
+					$label_id = $this->db->insert_id();
+					$labels[] = array_merge($label_data, ['id' => $label_id]);
+				}
+				
+				$this->db->trans_complete();
+				
+				return $this->db->trans_status() ? $labels : false;
+			}
+
+			/**
+			 * Get label by code
+			 */
+			public function get_label_by_code($label_code) {
+				$this->db->select('l.*, p.*, 
+					COUNT(DISTINCT lc.id) as total_children,
+					SUM(CASE WHEN lc.status = "scanned_out" THEN 1 ELSE 0 END) as scanned_out_children,
+					SUM(CASE WHEN lc.status = "scanned_in" THEN 1 ELSE 0 END) as scanned_in_children,
+					SUM(CASE WHEN lc.status = "completed" THEN 1 ELSE 0 END) as completed_children');
+				$this->db->from('labels l');
+				$this->db->join('packing_list p', 'l.packing_id = p.id', 'left');
+				$this->db->join('labels lc', 'lc.parent_label_id = l.id AND l.label_type = "master"', 'left');
+				$this->db->where('l.label_code', $label_code);
+				$this->db->group_by('l.id');
+				
+				return $this->db->get()->row_array();
+			}
+
+			/**
+			 * Get all labels for packing list
+			 */
+			public function get_labels_by_packing($packing_id) {
+				$this->db->select('l.*');
+				$this->db->from('labels l');
+				$this->db->where('l.packing_id', $packing_id);
+				$this->db->order_by('l.label_type', 'DESC');
+				$this->db->order_by('l.id', 'ASC');
+				
+				return $this->db->get()->result_array();
+			}
+
+			/**
+			 * Process label scan
+			 */
+			public function process_label_scan($label_id, $action, $user_id = null) {
+				$valid_actions = ['printed', 'scanned_out', 'scanned_in', 'completed', 'void'];
+				
+				if (!in_array($action, $valid_actions)) {
+					return false;
+				}
+				
+				$time_field_map = [
+					'printed' => 'printed_at',
+					'scanned_out' => 'scanned_out_at',
+					'scanned_in' => 'scanned_in_at',
+					'completed' => 'completed_at'
+				];
+				
+				$this->db->trans_start();
+				
+				// Update label status
+				$update_data = [
+					'status' => $action,
+					'updated_at' => date('Y-m-d H:i:s')
+				];
+				
+				if (isset($time_field_map[$action])) {
+					$update_data[$time_field_map[$action]] = date('Y-m-d H:i:s');
+				}
+				
+				$this->db->where('id', $label_id);
+				$this->db->update('labels', $update_data);
+				
+				// Log the scan
+				$log_data = [
+					'label_id' => $label_id,
+					'action' => $action,
+					'user_id' => $user_id,
+					'scan_time' => date('Y-m-d H:i:s')
+				];
+				$this->db->insert('label_scan_logs', $log_data);
+				
+				// If this is a child label, check parent status
+				$this->db->select('parent_label_id, status');
+				$this->db->where('id', $label_id);
+				$label = $this->db->get('labels')->row_array();
+				
+				if ($label && $label['parent_label_id']) {
+					$this->_update_parent_label_status($label['parent_label_id']);
+				}
+				
+				// Update packing list status if all labels are scanned
+				$this->db->select('packing_id');
+				$this->db->where('id', $label_id);
+				$packing_id_result = $this->db->get('labels')->row();
+				
+				if ($packing_id_result) {
+					$this->_update_packing_status($packing_id_result->packing_id);
+				}
+				
+				$this->db->trans_complete();
+				
+				return $this->db->trans_status();
+			}
+
+			/**
+			 * Update parent label status based on children
+			 */
+			private function _update_parent_label_status($parent_label_id) {
+				$this->db->select('
+					COUNT(*) as total_children,
+					SUM(CASE WHEN status = "scanned_out" THEN 1 ELSE 0 END) as scanned_out,
+					SUM(CASE WHEN status = "scanned_in" THEN 1 ELSE 0 END) as scanned_in,
+					SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) as completed'
+				);
+				$this->db->where('parent_label_id', $parent_label_id);
+				$stats = $this->db->get('labels')->row_array();
+				
+				$new_status = 'active';
+				
+				if ($stats['completed'] == $stats['total_children']) {
+					$new_status = 'completed';
+				} elseif ($stats['scanned_in'] == $stats['total_children']) {
+					$new_status = 'scanned_in';
+				} elseif ($stats['scanned_out'] == $stats['total_children']) {
+					$new_status = 'scanned_out';
+				}
+				
+				$this->db->where('id', $parent_label_id);
+				$this->db->update('labels', ['status' => $new_status]);
+			}
+
+			/**
+			 * Update packing list status based on labels
+			 */
+			private function _update_packing_status($packing_id) {
+				$this->db->select('
+					COUNT(*) as total_labels,
+					SUM(CASE WHEN status = "scanned_out" THEN 1 ELSE 0 END) as scanned_out,
+					SUM(CASE WHEN status = "scanned_in" THEN 1 ELSE 0 END) as scanned_in,
+					SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) as completed'
+				);
+				$this->db->where('packing_id', $packing_id);
+				$stats = $this->db->get('labels')->row_array();
+				
+				$update_data = [];
+				
+				if ($stats['completed'] > 0) {
+					$update_data['status_scan_in'] = 'completed';
+				} elseif ($stats['scanned_in'] > 0) {
+					$update_data['status_scan_in'] = 'scanned_in';
+				} elseif ($stats['scanned_out'] > 0) {
+					$update_data['status_scan_out'] = 'scanned_out';
+				}
+				
+				if (!empty($update_data)) {
+					$this->db->where('id', $packing_id);
+					$this->db->update('packing_list', $update_data);
+				}
+			}
+
+			/**
+			 * Get label statistics
+			 */
+			public function get_label_statistics($date = null) {
+				if (!$date) {
+					$date = date('Y-m-d');
+				}
+				
+				$stats = [
+					'total_labels' => $this->db->where('DATE(created_at)', $date)->count_all_results('labels'),
+					'printed_today' => $this->db->where('DATE(printed_at)', $date)->count_all_results('labels'),
+					'scanned_out_today' => $this->db->where('DATE(scanned_out_at)', $date)->count_all_results('labels'),
+					'scanned_in_today' => $this->db->where('DATE(scanned_in_at)', $date)->count_all_results('labels'),
+					'completed_today' => $this->db->where('DATE(completed_at)', $date)->count_all_results('labels'),
+				];
+				
+				return $stats;
+			}
+
+
 }

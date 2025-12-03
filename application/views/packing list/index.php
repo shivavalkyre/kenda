@@ -743,7 +743,7 @@ function loadPackingList(page = 1) {
         search: currentSearch
     });
 
-    fetch(`${baseUrl}/packing-list/api/list?${params}`)
+    fetch(`${baseUrl}packing-list/api/list?${params}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -1056,7 +1056,7 @@ function getScanInStatus(status) {
 function showScanActions(packingId, noPacking) {
     currentScanPackingId = packingId;
     
-    fetch(`${baseUrl}/packing-list/api/detail/${packingId}`)
+    fetch(`${baseUrl}packing-list/api/detail/${packingId}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -1342,35 +1342,6 @@ async function completeLoading(packingId) {
     }
 }
 
-function completeAllScans(packingId) {
-    if (!confirm('Konfirmasi Complete All: Semua proses scan akan diselesaikan sekaligus?')) {
-        return;
-    }
-    
-    fetch(`${baseUrl}/packing-list/api/complete-all`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: `packing_id=${packingId}`
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showSuccess('Semua proses scan berhasil diselesaikan!');
-            const modal = bootstrap.Modal.getInstance(document.getElementById('scanActionsModal'));
-            modal.hide();
-            loadPackingList();
-        } else {
-            showError('Gagal complete all: ' + (data.message || 'Unknown error'));
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showError('Terjadi kesalahan saat complete all');
-    });
-}
-
 function loadBarangList() {
     fetch(`${baseUrl}/packing-list/api/barang`)
         .then(response => response.json())
@@ -1439,12 +1410,13 @@ function tambahItem() {
     const kodeBarang = selectedOption.getAttribute('data-kode');
     const namaBarang = selectedOption.getAttribute('data-nama');
     const kategori = selectedOption.getAttribute('data-kategori');
-    const qty = parseInt(qtyInput.value);
+    const qty = parseInt(qtyInput.value); // KONVERSI KE INTEGER
     
     // Check if item already exists
     const existingItem = items.find(item => item.kode === kodeBarang);
     if (existingItem) {
-        existingItem.qty += qty;
+        // Pastikan qty diubah ke integer
+        existingItem.qty = parseInt(existingItem.qty) + qty;
         updateTabelItem();
     } else {
         items.push({
@@ -1452,7 +1424,7 @@ function tambahItem() {
             kode: kodeBarang,
             nama: namaBarang,
             kategori: kategori,
-            qty: qty
+            qty: qty // Sudah integer
         });
         updateTabelItem();
     }
@@ -1480,12 +1452,13 @@ function tambahItemEdit() {
     const kodeBarang = selectedOption.getAttribute('data-kode');
     const namaBarang = selectedOption.getAttribute('data-nama');
     const kategori = selectedOption.getAttribute('data-kategori');
-    const qty = parseInt(qtyInput.value);
+    const qty = parseInt(qtyInput.value); // KONVERSI KE INTEGER
     
     // Check if item already exists
     const existingItem = editItems.find(item => item.kode === kodeBarang);
     if (existingItem) {
-        existingItem.qty += qty;
+        // Pastikan qty diubah ke integer
+        existingItem.qty = parseInt(existingItem.qty) + qty;
         updateEditTabelItem();
     } else {
         editItems.push({
@@ -1493,7 +1466,7 @@ function tambahItemEdit() {
             kode: kodeBarang,
             nama: namaBarang,
             kategori: kategori,
-            qty: qty
+            qty: qty // Sudah integer
         });
         updateEditTabelItem();
     }
@@ -1521,7 +1494,10 @@ function updateTabelItem() {
     let total = 0;
     
     items.forEach(item => {
-        total += item.qty;
+        // KONVERSI QTY KE INTEGER
+        const qty = parseInt(item.qty) || 0;
+        total += qty;
+        
         tbody.innerHTML += `
             <tr>
                 <td>${item.id + 1}</td>
@@ -1532,7 +1508,7 @@ function updateTabelItem() {
                         ${item.kategori}
                     </span>
                 </td>
-                <td class="text-end">${item.qty}</td>
+                <td class="text-end">${qty}</td>
                 <td class="text-center">
                     <button type="button" class="btn btn-sm btn-outline-danger" onclick="hapusItem(${item.id})">
                         <i class="fas fa-trash"></i>
@@ -1553,7 +1529,10 @@ function updateEditTabelItem() {
     let total = 0;
     
     editItems.forEach(item => {
-        total += item.qty;
+        // KONVERSI QTY KE INTEGER
+        const qty = parseInt(item.qty) || 0;
+        total += qty;
+        
         tbody.innerHTML += `
             <tr>
                 <td>${item.id + 1}</td>
@@ -1564,7 +1543,7 @@ function updateEditTabelItem() {
                         ${item.kategori}
                     </span>
                 </td>
-                <td class="text-end">${item.qty}</td>
+                <td class="text-end">${qty}</td>
                 <td class="text-center">
                     <button type="button" class="btn btn-sm btn-outline-danger" onclick="hapusItemEdit(${item.id})">
                         <i class="fas fa-trash"></i>
@@ -1689,12 +1668,14 @@ function showEditModal(data) {
     
     if (data.items && Array.isArray(data.items)) {
         data.items.forEach((item, index) => {
+            // KONVERSI QTY KE INTEGER
+            const qty = parseInt(item.qty) || 0;
             editItems.push({
                 id: editItemCounter++,
                 kode: item.kode || '',
                 nama: item.nama || '',
                 kategori: item.kategori || '',
-                qty: item.qty || 0
+                qty: qty // Sudah integer
             });
         });
     }
@@ -1775,6 +1756,14 @@ function showDetailModal(data) {
     const scanOutStatus = getScanOutStatus(data.status_scan_out);
     const scanInStatus = getScanInStatus(data.status_scan_in);
     
+    // Hitung total items dari data.items
+    let totalItems = 0;
+    if (data.items && Array.isArray(data.items)) {
+        data.items.forEach(item => {
+            totalItems += parseInt(item.qty) || 0;
+        });
+    }
+    
     const modalContent = `
         <div class="row">
             <div class="col-md-6">
@@ -1832,7 +1821,7 @@ function showDetailModal(data) {
             <div class="col-12">
                 <div class="section-header mb-3">
                     <h6 class="section-title mb-0">
-                        <i class="fas fa-boxes me-2"></i>Daftar Item (${data.total_items || 0} item)
+                        <i class="fas fa-boxes me-2"></i>Daftar Item (${totalItems} item)
                     </h6>
                 </div>
                 <div class="table-responsive">
@@ -1847,7 +1836,9 @@ function showDetailModal(data) {
                             </tr>
                         </thead>
                         <tbody>
-                            ${(data.items && Array.isArray(data.items) ? data.items : []).map((item, index) => `
+                            ${(data.items && Array.isArray(data.items) ? data.items : []).map((item, index) => {
+                                const qty = parseInt(item.qty) || 0;
+                                return `
                                 <tr>
                                     <td class="text-muted">${index + 1}</td>
                                     <td>
@@ -1859,14 +1850,15 @@ function showDetailModal(data) {
                                             ${item.kategori || 'N/A'}
                                         </span>
                                     </td>
-                                    <td class="text-end fw-bold">${item.qty || 0}</td>
+                                    <td class="text-end fw-bold">${qty}</td>
                                 </tr>
-                            `).join('')}
+                                `;
+                            }).join('')}
                         </tbody>
                         <tfoot class="table-light">
                             <tr>
                                 <td colspan="4" class="text-end fw-bold">Total:</td>
-                                <td class="text-end fw-bold text-primary">${data.total_items || 0}</td>
+                                <td class="text-end fw-bold text-primary">${totalItems}</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -1925,74 +1917,147 @@ function formatTime(timeString) {
     }
 }
 
+// ===== FUNGSI CETAK LABEL YANG DIPERBAIKI =====
+
 function printLabel(noPacking, packingId) {
     if (!packingId) {
         alert('ID packing tidak valid');
         return;
     }
     
-    fetch(`${baseUrl}/packing-list/api/cetak-label`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: `packing_ids[]=${packingId}&type=single`
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(`Label untuk ${noPacking} berhasil digenerate`);
-            console.log('Label data:', data.data);
-        } else {
-            alert('Gagal generate label: ' + (data.message || 'Unknown error'));
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Terjadi kesalahan saat generate label');
-    });
+    // Buka halaman cetak label di tab baru
+    const printUrl = `${baseUrl}/packing-list/cetak-label/${packingId}`;
+    window.open(printUrl, '_blank');
+    
+    // Update status menjadi printed (opsional)
+    updatePackingStatus(packingId, SCAN_STATUS.PRINTED);
+}
+
+// function printSelectedLabels() {
+//     const selected = document.querySelectorAll('.packing-checkbox:checked');
+//     if (selected.length === 0) {
+//         alert('Pilih packing list yang akan dicetak labelnya!');
+//         return;
+//     }
+    
+//     const packingIds = Array.from(selected).map(checkbox => {
+//         return parseInt(checkbox.value);
+//     }).filter(id => !isNaN(id));
+    
+//     if (packingIds.length === 0) {
+//         alert('Tidak ada packing list valid yang dipilih');
+//         return;
+//     }
+    
+//     if (packingIds.length === 1) {
+//         // Jika hanya satu, gunakan fungsi print label single
+//         const row = selected[0].closest('tr');
+//         const noPacking = row ? row.querySelector('td:nth-child(3)').textContent.trim() : 'PL' + packingIds[0].toString().padStart(3, '0');
+//         printLabel(noPacking, packingIds[0]);
+//     } else {
+//         // Jika multiple, buka halaman cetak multiple
+//         const printUrl = `${baseUrl}/packing-list/cetak-label-multiple?ids=${packingIds.join(',')}`;
+//         window.open(printUrl, '_blank');
+        
+//         // Update semua status menjadi printed (opsional)
+//         updateBatchPackingStatus(packingIds, SCAN_STATUS.PRINTED);
+//     }
+// }
+
+function printSelectedLabels() {
+    const selected = document.querySelectorAll('.packing-checkbox:checked');
+    if (selected.length === 0) {
+        showToast('Pilih packing list yang akan dicetak labelnya!', 'warning');
+        return;
+    }
+    
+    const packingIds = Array.from(selected).map(checkbox => {
+        return parseInt(checkbox.value);
+    }).filter(id => !isNaN(id));
+    
+    if (packingIds.length === 0) {
+        showToast('Tidak ada packing list valid yang dipilih', 'warning');
+        return;
+    }
+    
+    // Build URL dengan benar
+    const baseUrl = '<?php echo base_url(); ?>';
+    const printUrl = `${baseUrl}packing-list/cetak-label-multiple?ids=${packingIds.join(',')}&autoprint=1`;
+    
+    console.log('Print URL:', printUrl); // Debug
+    
+    // Open print window
+    const printWindow = window.open(printUrl, '_blank', 'width=1200,height=800,scrollbars=yes');
+    
+    // Update status setelah window terbuka (opsional)
+    setTimeout(() => {
+        updateBatchPackingStatus(packingIds, SCAN_STATUS.PRINTED);
+    }, 1000);
 }
 
 function printLabelFromDetail() {
     if (currentDetailPackingId) {
-        printLabel('PL' + currentDetailPackingId.toString().padStart(3, '0'), currentDetailPackingId);
+        // Ambil nomor packing dari modal detail
+        const modalLabel = document.getElementById('detailPackingModalLabel');
+        const noPacking = modalLabel.textContent.includes(' - ') 
+            ? modalLabel.textContent.split(' - ')[1] 
+            : `PL${currentDetailPackingId.toString().padStart(3, '0')}`;
+        printLabel(noPacking, currentDetailPackingId);
+        
+        // Tutup modal detail
+        const modal = bootstrap.Modal.getInstance(document.getElementById('detailPackingModal'));
+        if (modal) {
+            modal.hide();
+        }
     } else {
         alert('Tidak ada packing list yang dipilih');
     }
 }
 
-function printSelectedLabels() {
-    const selected = document.querySelectorAll('.packing-checkbox:checked');
-    if (selected.length === 0) {
-        alert('Pilih packing list yang akan dicetak labelnya!');
-        return;
-    }
-    
-    const packingIds = Array.from(selected).map(checkbox => checkbox.value);
-    const packingNumbers = Array.from(selected).map(checkbox => {
-        const row = checkbox.closest('tr');
-        return row ? row.querySelector('td:nth-child(3)').textContent.trim() : 'N/A';
-    });
-    
-    fetch(`${baseUrl}/packing-list/api/cetak-label`, {
+// Fungsi helper untuk update status packing
+function updatePackingStatus(packingId, status) {
+    fetch(`${baseUrl}/packing-list/api/update-status`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: `packing_ids[]=${packingIds.join('&packing_ids[]=')}&type=multiple`
+        body: `packing_id=${packingId}&status=${status}`
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert(`Berhasil generate ${data.data ? data.data.total : packingIds.length} label untuk: ${packingNumbers.join(', ')}`);
-            console.log('Multiple labels data:', data.data);
-        } else {
-            alert('Gagal generate label: ' + (data.message || 'Unknown error'));
+            console.log(`Status packing ${packingId} diupdate ke '${status}'`);
+            // Refresh data setelah update
+            setTimeout(() => loadPackingList(), 1000);
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('Terjadi kesalahan saat generate label');
+        console.error('Error updating status:', error);
+    });
+}
+
+// Fungsi helper untuk update status batch
+function updateBatchPackingStatus(packingIds, status) {
+    fetch(`${baseUrl}/packing-list/api/update-status-batch`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            packing_ids: packingIds,
+            status: status
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log(`${packingIds.length} packing list diupdate ke '${status}'`);
+            // Refresh data setelah update
+            setTimeout(() => loadPackingList(), 1000);
+        }
+    })
+    .catch(error => {
+        console.error('Error updating batch status:', error);
     });
 }
 
@@ -2002,16 +2067,95 @@ function refreshData() {
     document.getElementById('searchInput').value = '';
     loadPackingList();
     loadBarangList();
-    showSuccess('Data berhasil diperbarui');
+    showToast('Data berhasil diperbarui', 'success');
+}
+
+// ===== FUNGSI UTILITY TAMBAHAN =====
+
+function showToast(message, type = 'info') {
+    // Buat elemen toast jika belum ada
+    let toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toastContainer';
+        toastContainer.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 300px;
+        `;
+        document.body.appendChild(toastContainer);
+    }
+    
+    const toastId = 'toast-' + Date.now();
+    const bgColor = type === 'success' ? 'bg-success' : 
+                    type === 'error' ? 'bg-danger' : 
+                    type === 'warning' ? 'bg-warning' : 'bg-info';
+    
+    const toastHTML = `
+        <div id="${toastId}" class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header ${bgColor} text-white">
+                <strong class="me-auto">
+                    <i class="fas ${type === 'success' ? 'fa-check-circle' : 
+                                  type === 'error' ? 'fa-exclamation-circle' : 
+                                  type === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle'} me-2"></i>
+                    ${type === 'success' ? 'Sukses' : 
+                     type === 'error' ? 'Error' : 
+                     type === 'warning' ? 'Peringatan' : 'Info'}
+                </strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        </div>
+    `;
+    
+    // Tambahkan toast
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = toastHTML;
+    toastContainer.appendChild(tempDiv.firstElementChild);
+    
+    // Hapus toast setelah 3 detik
+    setTimeout(() => {
+        const toast = document.getElementById(toastId);
+        if (toast) {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }
+    }, 3000);
 }
 
 function showError(message) {
     console.error('Error:', message);
-    alert('Error: ' + message);
+    showToast(message, 'error');
 }
 
 function showSuccess(message) {
     console.log('Success:', message);
-    alert('Success: ' + message);
+    showToast(message, 'success');
+}
+
+// Fungsi untuk handle auto print (opsional)
+function setupAutoPrint(printWindow) {
+    if (printWindow) {
+        // Cek jika window sudah siap
+        printWindow.onload = function() {
+            // Cek jika ada parameter autoprint
+            const urlParams = new URLSearchParams(printWindow.location.search);
+            if (urlParams.get('autoprint') === '1') {
+                setTimeout(() => {
+                    printWindow.print();
+                }, 500);
+            }
+        };
+    }
+}
+
+// Fungsi untuk cetak packing list (bukan label)
+function printPackingList(packingId) {
+    const printUrl = `${baseUrl}/packing-list/cetak/${packingId}`;
+    window.open(printUrl, '_blank');
 }
 </script>

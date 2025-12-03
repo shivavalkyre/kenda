@@ -1,4 +1,3 @@
-
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 ?>
@@ -9,6 +8,28 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 
 <div class="container-fluid">
+    <!-- Flash Message -->
+    <?php if($this->session->flashdata('success')): ?>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i><?php echo $this->session->flashdata('success'); ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <?php endif; ?>
+    
+    <?php if($this->session->flashdata('error')): ?>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i><?php echo $this->session->flashdata('error'); ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <?php endif; ?>
+    
+    <?php if($this->session->flashdata('warning')): ?>
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i><?php echo $this->session->flashdata('warning'); ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <?php endif; ?>
+
     <!-- Page Header -->
     <div class="row mb-4">
         <div class="col-12">
@@ -399,6 +420,29 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 .spinner-border.text-kenda {
     color: #0056b3 !important;
+}
+
+/* Alert Styles */
+.alert {
+    border-radius: 8px;
+    border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 1.5rem;
+}
+
+.alert-success {
+    background-color: #d1f7dc;
+    color: #0f5132;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
 }
 
 /* STYLE CARD SEPERTI BARANG - TAMBAHAN BARU */
@@ -827,7 +871,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 }
 </style>
 
-<!-- SweetAlert2 JS -->
+<!-- SweetAlert2 JS - MASIH ADA TAPI TIDAK DIGUNAKAN UNTUK LOADING/KONFIRMASI -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
@@ -838,104 +882,17 @@ let limit = 10; // Items per page
 let totalItems = 0;
 let currentStatusFilter = 'all';
 
-// Custom theme untuk SweetAlert2
-const swalTheme = {
-    customClass: {
-        popup: 'kenda-swal-popup',
-        title: 'kenda-swal-title',
-        htmlContainer: 'kenda-swal-content',
-        confirmButton: 'btn btn-kenda',
-        cancelButton: 'btn btn-secondary',
-        closeButton: 'kenda-swal-close',
-        icon: 'kenda-swal-icon'
-    },
-    buttonsStyling: false,
-    showConfirmButton: true,
-    confirmButtonText: 'OK',
-    timer: 3000,
-    timerProgressBar: true,
-    didOpen: (toast) => {
-        toast.addEventListener('mouseenter', Swal.stopTimer);
-        toast.addEventListener('mouseleave', Swal.resumeTimer);
-    }
-};
-
-function showError(message) {
-    Swal.fire({
-        ...swalTheme,
-        icon: 'error',
-        title: '<i class="bi bi-x-circle-fill text-danger"></i> Error',
-        html: `<div class="text-start">${message}</div>`,
-        customClass: {
-            ...swalTheme.customClass,
-            popup: 'kenda-swal-popup kenda-swal-error',
-            icon: 'd-none'
-        },
-        background: '#1a1d20',
-        color: '#fff'
-    });
-}
-
-function showSuccess(message) {
-    Swal.fire({
-        ...swalTheme,
-        icon: 'success',
-        title: '<i class="bi bi-check-circle-fill text-success"></i> Sukses',
-        html: `<div class="text-start">${message}</div>`,
-        customClass: {
-            ...swalTheme.customClass,
-            popup: 'kenda-swal-popup kenda-swal-success',
-            icon: 'd-none'
-        },
-        background: '#1a1d20',
-        color: '#fff'
-    });
-}
-
-// Fungsi konfirmasi dengan tema hitam-merah
-function showConfirm(title, message, confirmText = 'Ya', cancelText = 'Batal') {
-    return Swal.fire({
-        title: title,
-        html: message,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: confirmText,
-        cancelButtonText: cancelText,
-        customClass: {
-            popup: 'kenda-swal-popup',
-            title: 'kenda-swal-title',
-            htmlContainer: 'kenda-swal-content',
-            confirmButton: 'btn btn-kenda-red',
-            cancelButton: 'btn btn-secondary',
-            closeButton: 'kenda-swal-close'
-        },
-        buttonsStyling: false,
-        background: '#1a1d20',
-        color: '#fff',
-        reverseButtons: true
-    });
-}
-
-// Fungsi loading dengan tema hitam-merah
-function showLoading(title = 'Memproses...') {
-    Swal.fire({
-        title: title,
-        html: '<div class="spinner-border text-kenda" role="status"></div>',
-        customClass: {
-            popup: 'kenda-swal-popup',
-            title: 'kenda-swal-title mb-3'
-        },
-        background: '#1a1d20',
-        color: '#fff',
-        showConfirmButton: false,
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        allowEnterKey: false,
-        didOpen: () => {
-            Swal.showLoading();
-        }
-    });
-    return Swal;
+// Hanya fungsi escapeHtml yang masih digunakan
+function escapeHtml(text) {
+    if (!text) return '';
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -977,12 +934,9 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function loadKategoriList(page = 1, status = 'all') {
-    const loading = showLoading('Memuat data...');
-    
     fetch(`${baseUrl}/gudang/api_list_kategori?page=${page}&limit=${limit}&status=${status}`)
         .then(response => response.json())
         .then(data => {
-            loading.close();
             if (data.success) {
                 // Pastikan data ada dan valid
                 totalItems = parseInt(data.total_items) || 0;
@@ -995,33 +949,19 @@ function loadKategoriList(page = 1, status = 'all') {
                 renderKategoriTable(kategoriList);
                 renderPagination();
             } else {
-                showError('Gagal memuat data kategori: ' + (data.message || ''));
+                // Tampilkan error di console saja
+                console.error('Gagal memuat data kategori:', data.message || '');
                 // Reset data jika gagal
                 totalItems = 0;
                 renderKategoriTable([]);
             }
         })
         .catch(error => {
-            loading.close();
             console.error('Error:', error);
-            showError('Terjadi kesalahan saat memuat data');
             // Reset data jika error
             totalItems = 0;
             renderKategoriTable([]);
         });
-}
-
-// Tambahkan fungsi escapeHtml untuk keamanan
-function escapeHtml(text) {
-    if (!text) return '';
-    const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-    };
-    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
 }
 
 function loadStatistics() {
@@ -1305,8 +1245,13 @@ function highlightActivePage() {
 }
 
 function simpanKategori() {
-    const loading = showLoading('Menyimpan kategori...');
     const formData = new FormData(document.getElementById('formTambahKategori'));
+    const submitBtn = document.querySelector('#formTambahKategori button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    // Disable button dan tampilkan loading
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Menyimpan...';
     
     fetch(`${baseUrl}/kategori/simpan`, {
         method: 'POST',
@@ -1314,42 +1259,43 @@ function simpanKategori() {
     })
     .then(response => response.json())
     .then(data => {
-        loading.close();
+        // Reset button
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+        
         if (data.success) {
-            showSuccess(data.message);
             // Close modal and refresh data
             const modal = bootstrap.Modal.getInstance(document.getElementById('tambahKategoriModal'));
             modal.hide();
-            loadKategoriList(currentPage);
-            loadStatistics();
+            
+            // Reload page untuk menampilkan flash message
+            window.location.reload();
         } else {
-            showError(data.message);
+            // Tampilkan error di console
+            console.error('Error:', data.message);
         }
     })
     .catch(error => {
-        loading.close();
+        // Reset button
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+        
         console.error('Error:', error);
-        showError('Terjadi kesalahan saat menyimpan kategori');
     });
 }
 
 function editKategori(id) {
-    const loading = showLoading('Memuat data...');
-    
     fetch(`${baseUrl}/gudang/api_detail_kategori/${id}`)
         .then(response => response.json())
         .then(data => {
-            loading.close();
             if (data.success) {
                 showEditModal(data.data);
             } else {
-                showError('Gagal memuat data kategori');
+                console.error('Gagal memuat data kategori');
             }
         })
         .catch(error => {
-            loading.close();
             console.error('Error:', error);
-            showError('Terjadi kesalahan saat memuat data');
         });
 }
 
@@ -1367,8 +1313,13 @@ function showEditModal(data) {
 }
 
 function updateKategori() {
-    const loading = showLoading('Mengupdate kategori...');
     const formData = new FormData(document.getElementById('formEditKategori'));
+    const submitBtn = document.querySelector('#formEditKategori button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    // Disable button dan tampilkan loading
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Mengupdate...';
     
     fetch(`${baseUrl}/gudang/update_kategori`, {
         method: 'POST',
@@ -1376,43 +1327,44 @@ function updateKategori() {
     })
     .then(response => response.json())
     .then(data => {
-        loading.close();
+        // Reset button
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+        
         if (data.success) {
-            showSuccess(data.message);
             // Close modal and refresh data
             const modal = bootstrap.Modal.getInstance(document.getElementById('editKategoriModal'));
             modal.hide();
-            loadKategoriList(currentPage);
-            loadStatistics();
+            
+            // Reload page untuk menampilkan flash message
+            window.location.reload();
         } else {
-            showError(data.message);
+            // Tampilkan error di console
+            console.error('Error:', data.message);
         }
     })
     .catch(error => {
-        loading.close();
+        // Reset button
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+        
         console.error('Error:', error);
-        showError('Terjadi kesalahan saat mengupdate kategori');
     });
 }
 
 // FUNGSI DETAIL KATEGORI YANG SUDAH DIUBAH SEPERTI BARANG
 function detailKategori(id) {
-    const loading = showLoading('Memuat detail...');
-    
     fetch(`${baseUrl}/gudang/api_detail_kategori/${id}`)
         .then(response => response.json())
         .then(data => {
-            loading.close();
             if (data.success) {
                 showDetailModal(data.data);
             } else {
-                showError('Gagal memuat detail kategori');
+                console.error('Gagal memuat detail kategori');
             }
         })
         .catch(error => {
-            loading.close();
             console.error('Error:', error);
-            showError('Terjadi kesalahan saat memuat detail');
         });
 }
 
@@ -1592,35 +1544,22 @@ function showDetailModal(data) {
 }
 
 function hapusKategori(id, nama) {
-    showConfirm(
-        'Konfirmasi Hapus',
-        `Apakah Anda yakin ingin menghapus kategori <strong>"${nama}"</strong>?<br><small class="text-warning">Data yang dihapus tidak dapat dikembalikan</small>`,
-        'Hapus',
-        'Batal'
-    ).then((result) => {
-        if (result.isConfirmed) {
-            // Show loading
-            const loading = showLoading('Menghapus kategori...');
-            
-            fetch(`${baseUrl}/gudang/hapus_kategori/${id}`)
-                .then(response => response.json())
-                .then(data => {
-                    loading.close();
-                    if (data.success) {
-                        showSuccess(data.message);
-                        loadKategoriList(currentPage);
-                        loadStatistics();
-                    } else {
-                        showError(data.message);
-                    }
-                })
-                .catch(error => {
-                    loading.close();
-                    console.error('Error:', error);
-                    showError('Terjadi kesalahan saat menghapus kategori');
-                });
-        }
-    });
+    // Menggunakan konfirmasi browser default
+    if (confirm(`Apakah Anda yakin ingin menghapus kategori "${nama}"?\n\nData yang dihapus tidak dapat dikembalikan.`)) {
+        fetch(`${baseUrl}/gudang/hapus_kategori/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reload page untuk menampilkan flash message
+                    window.location.reload();
+                } else {
+                    console.error('Error:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
 }
 
 function applyFilter(status) {
@@ -1644,18 +1583,8 @@ function applyFilter(status) {
 }
 
 function refreshData() {
-    const loading = showLoading('Memuat data...');
-    
-    Promise.all([
-        loadKategoriList(currentPage, currentStatusFilter),
-        loadStatistics()
-    ]).then(() => {
-        loading.close();
-        showSuccess('Data berhasil diperbarui');
-    }).catch(error => {
-        loading.close();
-        showError('Gagal memuat data');
-    });
+    loadKategoriList(currentPage, currentStatusFilter);
+    loadStatistics();
 }
 
 // Helper function untuk format tanggal

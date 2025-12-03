@@ -39,16 +39,16 @@ class Gudang extends CI_Controller {
 		$this->load->view('template', $data);
 	}
 
-		public function cetak_packing($id) {
-		$packing = $this->Gudang_model->get_packing_detail($id);
+	// 	public function cetak_packing($id) {
+	// 	$packing = $this->Gudang_model->get_packing_detail($id);
 		
-		if (!$packing) {
-			show_404();
-		}
+	// 	if (!$packing) {
+	// 		show_404();
+	// 	}
 		
-		$data['packing'] = $packing;
-		$this->load->view('packing list/cetak', $data);
-	}
+	// 	$data['packing'] = $packing;
+	// 	$this->load->view('packing list/cetak', $data);
+	// }
 
     // Laporan Stok
     public function stok() {
@@ -1080,13 +1080,290 @@ public function barang() {
             ->set_output(json_encode($response));
     }
 
+    // public function api_check_label($label_code) {
+    //     $packing = $this->Gudang_model->get_packing_by_label($label_code);
+        
+    //     if ($packing) {
+    //         $response = [
+    //             'success' => true,
+    //             'data' => $packing
+    //         ];
+    //     } else {
+    //         $response = [
+    //             'success' => false,
+    //             'message' => 'Label tidak ditemukan'
+    //         ];
+    //     }
+
+    //     $this->output
+    //         ->set_content_type('application/json')
+    //         ->set_output(json_encode($response));
+    // }
+
+    // public function api_process_scan() {
+    //     $packing_id = $this->input->post('packing_id');
+    //     $action = $this->input->post('action');
+    //     $label_code = $this->input->post('label_code');
+
+    //     switch ($action) {
+    //         case 'scanned_out':
+    //             $result = $this->Gudang_model->update_scan_status($packing_id, 'scanned_out', 'scan_out_time');
+    //             break;
+    //         case 'scanned_in':
+    //             $result = $this->Gudang_model->update_scan_status($packing_id, 'scanned_in', 'scan_in_time');
+    //             break;
+    //         case 'completed':
+    //             $result = $this->Gudang_model->update_scan_status($packing_id, 'completed', 'scan_in_time');
+    //             break;
+    //         default:
+    //             $result = false;
+    //     }
+
+    //     if ($result) {
+    //         $response = [
+    //             'success' => true,
+    //             'message' => 'Scan berhasil diproses',
+    //             'data' => [
+    //                 'packing_id' => $packing_id,
+    //                 'action' => $action,
+    //                 'label_code' => $label_code,
+    //                 'timestamp' => date('Y-m-d H:i:s')
+    //             ]
+    //         ];
+    //     } else {
+    //         $response = [
+    //             'success' => false,
+    //             'message' => 'Gagal memproses scan'
+    //         ];
+    //     }
+
+    //     $this->output
+    //         ->set_content_type('application/json')
+    //         ->set_output(json_encode($response));
+    // }
+
+    // public function api_today_scan_stats() {
+    //     $stats = $this->Gudang_model->get_today_scan_stats();
+        
+    //     $response = [
+    //         'success' => true,
+    //         'data' => $stats
+    //     ];
+
+    //     $this->output
+    //         ->set_content_type('application/json')
+    //         ->set_output(json_encode($response));
+    // }
+
+	// ==================== PACKING LIST API METHODS ====================
+
+/**
+ * API untuk Get Barang untuk Packing List
+ */
+public function api_barang_for_packing() {
+    $barang_list = $this->Gudang_model->get_barang_for_dropdown();
+    
+    $formatted_data = [];
+    foreach ($barang_list as $barang) {
+        $formatted_data[] = [
+            'id' => $barang['kode_barang'],
+            'kode' => $barang['kode_barang'],
+            'nama' => $barang['nama_barang'],
+            'kategori' => $barang['kategori'],
+            'stok' => $barang['stok'],
+            'satuan' => $barang['satuan']
+        ];
+    }
+    
+    $response = [
+        'success' => true,
+        'data' => $formatted_data
+    ];
+
+    $this->output
+        ->set_content_type('application/json')
+        ->set_output(json_encode($response));
+}
+
+	public function cetak_packing($id) {
+		// Ambil data dari model
+		$packing = $this->Gudang_model->get_packing_detail($id);
+		
+		if (!$packing) {
+			show_404();
+		}
+		
+		// Pastikan data items ada
+		if (!isset($packing['items']) || empty($packing['items'])) {
+			$packing['items'] = [];
+		}
+		
+		// Hitung total items
+		$packing['total_items'] = isset($packing['jumlah_item']) ? $packing['jumlah_item'] : 0;
+		
+		$data['packing'] = $packing;
+		
+		// Load view cetak
+		$this->load->view('cetak', $data);
+	}
+
+		public function cetak_label($id = null)
+	{
+		// Ambil data packing list
+		$data['packing'] = $this->Gudang_model->getPackingById($id);
+		
+		// Load view cetak label
+		$this->load->view('packing list/cetak_label', $data);
+	}
+
+	// public function cetak_label_multiple()
+	// {
+	// 	$ids = $this->input->get('ids');
+	// 	$id_array = explode(',', $ids);
+		
+	// 	// Ambil data multiple packing
+	// 	$data['packings'] = $this->Gudang_model->getPackingByIds($id_array);
+		
+	// 	// Load view cetak multiple
+	// 	$this->load->view('packing list/cetak_label_multiple', $data);
+	// }
+
+	// Di application/controllers/Gudang.php
+public function cetak_label_multiple()
+{
+    try {
+        // Get IDs from query string
+        $ids = $this->input->get('ids');
+        
+        if (empty($ids)) {
+            // Default untuk testing
+            $ids = '1,2,3,4,5';
+        }
+        
+        // Convert string to array
+        $ids_array = explode(',', $ids);
+        $ids_array = array_map('intval', $ids_array);
+        $ids_array = array_filter($ids_array);
+        
+        if (empty($ids_array)) {
+            // Show empty state
+            $data['packing_lists'] = [];
+            $data['total_labels'] = 0;
+            $data['error_message'] = 'Tidak ada ID packing list yang valid';
+        } else {
+            // Load model jika belum
+            if (!class_exists('Packing_list_model')) {
+                $this->load->model('Gudang_model', 'packing');
+            }
+            
+            // Get packing lists data
+            $packing_lists = $this->db
+                ->select('p.*, 
+                    (SELECT COUNT(*) FROM packing_items WHERE packing_id = p.id) as jumlah_item')
+                ->from('packing_list p')
+                ->where_in('p.id', $ids_array)
+                ->get()
+                ->result();
+            
+            if (empty($packing_lists)) {
+                // Jika tidak ada data, coba query sederhana
+                $packing_lists = $this->db
+                    ->where_in('id', $ids_array)
+                    ->get('packing_list')
+                    ->result();
+                
+                // Tambahkan jumlah_item default
+                foreach ($packing_lists as &$list) {
+                    $list->jumlah_item = 0;
+                }
+            }
+            
+            $data['packing_lists'] = $packing_lists;
+            $data['total_labels'] = count($packing_lists);
+            $data['error_message'] = null;
+        }
+        
+        // Tambahkan data tambahan
+        $data['print_date'] = date('d/m/Y H:i:s');
+        $data['page_title'] = 'Cetak Label Packing List';
+        
+        // Debug info (hapus di production)
+        $data['debug_info'] = [
+            'ids_input' => $ids,
+            'ids_array' => $ids_array,
+            'count' => isset($packing_lists) ? count($packing_lists) : 0
+        ];
+        
+        // Load view
+        $this->load->view('packing list/cetak_label_multiple', $data);
+        
+    } catch (Exception $e) {
+        // Error handling
+        $data['packing_lists'] = [];
+        $data['total_labels'] = 0;
+        $data['error_message'] = 'Terjadi kesalahan: ' . $e->getMessage();
+        $data['print_date'] = date('d/m/Y H:i:s');
+        
+        $this->load->view('packing list/cetak_label_multiple', $data);
+    }
+}
+
+ // ==================== SCAN API METHODS YANG DISINKRONKAN ====================
+
+    /**
+     * API untuk Check Label - DISINKRONKAN
+     */
     public function api_check_label($label_code) {
-        $packing = $this->Gudang_model->get_packing_by_label($label_code);
+        if (empty($label_code)) {
+            $response = [
+                'success' => false,
+                'message' => 'Kode label tidak valid'
+            ];
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode($response));
+            return;
+        }
+
+        // Parse label code (format: LBL001 -> packing_id = 1)
+        $packing_id = intval(str_replace('LBL', '', $label_code));
+        
+        if ($packing_id <= 0) {
+            $response = [
+                'success' => false,
+                'message' => 'Format label tidak valid'
+            ];
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode($response));
+            return;
+        }
+
+        // Get packing detail dengan validasi status
+        $this->db->select('p.*, COUNT(pi.id) as jumlah_item');
+        $this->db->from('packing_list p');
+        $this->db->join('packing_items pi', 'p.id = pi.packing_id', 'left');
+        $this->db->where('p.id', $packing_id);
+        $this->db->where('p.status', 'active'); // Pastikan status aktif
+        $this->db->group_by('p.id');
+        
+        $query = $this->db->get();
+        $packing = $query->row_array();
         
         if ($packing) {
+            // Format response untuk scan interface
             $response = [
                 'success' => true,
-                'data' => $packing
+                'data' => [
+                    'id' => $packing['id'],
+                    'no_packing' => $packing['no_packing'],
+                    'customer' => $packing['customer'],
+                    'status_scan_out' => $packing['status_scan_out'] ?? 'printed',
+                    'status_scan_in' => $packing['status_scan_in'] ?? 'pending',
+                    'scan_out_time' => $packing['scan_out_time'],
+                    'scan_in_time' => $packing['scan_in_time'],
+                    'total_items' => $packing['jumlah_item'] ?? 0
+                ]
             ];
         } else {
             $response = [
@@ -1100,35 +1377,114 @@ public function barang() {
             ->set_output(json_encode($response));
     }
 
+    /**
+     * API untuk Process Scan - DISINKRONKAN dengan Packing List
+     */
     public function api_process_scan() {
         $packing_id = $this->input->post('packing_id');
         $action = $this->input->post('action');
         $label_code = $this->input->post('label_code');
 
-        switch ($action) {
-            case 'scanned_out':
-                $result = $this->Gudang_model->update_scan_status($packing_id, 'scanned_out', 'scan_out_time');
-                break;
-            case 'scanned_in':
-                $result = $this->Gudang_model->update_scan_status($packing_id, 'scanned_in', 'scan_in_time');
-                break;
-            case 'completed':
-                $result = $this->Gudang_model->update_scan_status($packing_id, 'completed', 'scan_in_time');
-                break;
-            default:
-                $result = false;
+        if (empty($packing_id) || empty($action)) {
+            $response = [
+                'success' => false,
+                'message' => 'Data tidak lengkap'
+            ];
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode($response));
+            return;
         }
 
+        // Validasi action sesuai dengan packing list system
+        $valid_actions = ['scanned_out', 'scanned_in', 'completed'];
+        if (!in_array($action, $valid_actions)) {
+            $response = [
+                'success' => false,
+                'message' => 'Aksi tidak valid'
+            ];
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode($response));
+            return;
+        }
+
+        // Get packing data untuk validasi
+        $this->db->where('id', $packing_id);
+        $query = $this->db->get('packing_list');
+        $packing = $query->row_array();
+        
+        if (!$packing) {
+            $response = [
+                'success' => false,
+                'message' => 'Packing list tidak ditemukan'
+            ];
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode($response));
+            return;
+        }
+
+        // Validasi status transition sesuai packing list
+        $validation_result = $this->_validate_scan_transition(
+            $packing['status_scan_out'] ?? 'printed',
+            $packing['status_scan_in'] ?? 'pending',
+            $action
+        );
+
+        if (!$validation_result['valid']) {
+            $response = [
+                'success' => false,
+                'message' => $validation_result['message']
+            ];
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode($response));
+            return;
+        }
+
+        // Process scan berdasarkan action
+        $update_data = [];
+        $time_field = '';
+        
+        switch ($action) {
+            case 'scanned_out':
+                $update_data['status_scan_out'] = 'scanned_out';
+                $time_field = 'scan_out_time';
+                break;
+            case 'scanned_in':
+                $update_data['status_scan_in'] = 'scanned_in';
+                $time_field = 'scan_in_time';
+                break;
+            case 'completed':
+                $update_data['status_scan_in'] = 'completed';
+                $time_field = 'scan_in_time'; // atau completed_time jika ada
+                break;
+        }
+        
+        if ($time_field) {
+            $update_data[$time_field] = date('Y-m-d H:i:s');
+        }
+
+        // Update packing status
+        $this->db->where('id', $packing_id);
+        $result = $this->db->update('packing_list', $update_data);
+
         if ($result) {
+            // Log scan activity
+            $log_data = [
+                'packing_id' => $packing_id,
+                'action' => $action,
+                'label_code' => $label_code,
+                'user_id' => $this->session->userdata('user_id') ?? 1,
+                'timestamp' => date('Y-m-d H:i:s')
+            ];
+            $this->db->insert('scan_logs', $log_data);
+
             $response = [
                 'success' => true,
                 'message' => 'Scan berhasil diproses',
-                'data' => [
-                    'packing_id' => $packing_id,
-                    'action' => $action,
-                    'label_code' => $label_code,
-                    'timestamp' => date('Y-m-d H:i:s')
-                ]
+                'data' => array_merge(['packing_id' => $packing_id], $update_data)
             ];
         } else {
             $response = [
@@ -1142,8 +1498,29 @@ public function barang() {
             ->set_output(json_encode($response));
     }
 
+    /**
+     * API untuk Today Scan Statistics - DISINKRONKAN
+     */
     public function api_today_scan_stats() {
-        $stats = $this->Gudang_model->get_today_scan_stats();
+        $today = date('Y-m-d');
+        
+        // Hitung statistik berdasarkan packing list
+        $stats = [
+            'scanned_today' => $this->db
+                ->where('DATE(scan_out_time)', $today)
+                ->where('status_scan_out', 'scanned_out')
+                ->count_all_results('packing_list'),
+            
+            'loaded_today' => $this->db
+                ->where('DATE(scan_in_time)', $today)
+                ->where('status_scan_in', 'scanned_in')
+                ->count_all_results('packing_list'),
+            
+            'completed_today' => $this->db
+                ->where('DATE(scan_in_time)', $today)
+                ->where('status_scan_in', 'completed')
+                ->count_all_results('packing_list')
+        ];
         
         $response = [
             'success' => true,
@@ -1154,4 +1531,434 @@ public function barang() {
             ->set_content_type('application/json')
             ->set_output(json_encode($response));
     }
+
+    /**
+     * API untuk Recent Scans - DISINKRONKAN
+     */
+    public function api_recent_scans($limit = 5) {
+        $this->db->select('sl.*, p.no_packing, p.customer');
+        $this->db->from('scan_logs sl');
+        $this->db->join('packing_list p', 'sl.packing_id = p.id', 'left');
+        $this->db->order_by('sl.timestamp', 'DESC');
+        $this->db->limit($limit);
+        
+        $scans = $this->db->get()->result_array();
+        
+        $response = [
+            'success' => true,
+            'data' => $scans
+        ];
+
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode($response));
+    }
+
+    // ==================== HELPER METHODS UNTUK SCAN ====================
+
+    /**
+     * Validasi Status Transition untuk Scan
+     */
+    private function _validate_scan_transition($current_out, $current_in, $target_action) {
+        // Status constants sesuai dengan packing list
+        $SCAN_STATUS = [
+            'PRINTED' => 'printed',
+            'SCANNED_OUT' => 'scanned_out',
+            'SCANNED_IN' => 'scanned_in',
+            'COMPLETED' => 'completed',
+            'PENDING' => 'pending'
+        ];
+
+        // Validasi flow: printed → scanned_out → scanned_in → completed
+        switch ($target_action) {
+            case 'scanned_out':
+                if ($current_out !== $SCAN_STATUS['PRINTED'] || $current_in !== $SCAN_STATUS['PENDING']) {
+                    return [
+                        'valid' => false,
+                        'message' => 'Hanya bisa scan out dari status printed'
+                    ];
+                }
+                break;
+                
+            case 'scanned_in':
+                if ($current_out !== $SCAN_STATUS['SCANNED_OUT'] || $current_in !== $SCAN_STATUS['PENDING']) {
+                    return [
+                        'valid' => false,
+                        'message' => 'Hanya bisa scan in setelah scan out'
+                    ];
+                }
+                break;
+                
+            case 'completed':
+                if ($current_in !== $SCAN_STATUS['SCANNED_IN']) {
+                    return [
+                        'valid' => false,
+                        'message' => 'Hanya bisa complete setelah scan in'
+                    ];
+                }
+                break;
+        }
+
+        return ['valid' => true, 'message' => 'OK'];
+    }
+
+    /**
+     * Get Next Valid Actions untuk Scan Interface
+     */
+    private function _get_next_scan_actions($status_scan_out, $status_scan_in) {
+        return [
+            'canScanOut' => $status_scan_out === 'printed' && $status_scan_in === 'pending',
+            'canUndoScanOut' => $status_scan_out === 'scanned_out' && $status_scan_in === 'pending',
+            'canScanIn' => $status_scan_out === 'scanned_out' && $status_scan_in === 'pending',
+            'canComplete' => $status_scan_out === 'scanned_out' && $status_scan_in === 'scanned_in',
+            'canUndoScanIn' => $status_scan_in === 'scanned_in'
+        ];
+    }
+
+	// di Controller Packing_list.php
+
+public function api_update_status()
+{
+    $this->load->library('form_validation');
+    
+    $this->form_validation->set_rules('packing_id', 'Packing ID', 'required|numeric');
+    $this->form_validation->set_rules('status', 'Status', 'required');
+    
+    if ($this->form_validation->run() == FALSE) {
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode([
+                'success' => false,
+                'message' => validation_errors()
+            ]));
+        return;
+    }
+    
+    $packing_id = $this->input->post('packing_id');
+    $status = $this->input->post('status');
+    
+    // Update status di database
+    $data = [
+        'status_scan_out' => $status,
+        'updated_at' => date('Y-m-d H:i:s')
+    ];
+    
+    $this->db->where('id', $packing_id);
+    $result = $this->db->update('packing_list', $data);
+    
+    if ($result) {
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode([
+                'success' => true,
+                'message' => 'Status berhasil diupdate'
+            ]));
+    } else {
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode([
+                'success' => false,
+                'message' => 'Gagal mengupdate status'
+            ]));
+    }
+}
+
+
+
+			// ==================== LABEL API METHODS ====================
+
+/**
+ * API untuk generate labels untuk packing list
+ */
+public function api_generate_labels() {
+    $packing_id = $this->input->post('packing_id');
+    $label_count = $this->input->post('label_count') ?: 1;
+    $label_type = $label_count > 1 ? 'master' : 'single';
+    
+    $labels = $this->Gudang_model->create_labels_for_packing($packing_id, $label_count, $label_type);
+    
+    if ($labels) {
+        $response = [
+            'success' => true,
+            'message' => 'Label berhasil dibuat',
+            'data' => [
+                'labels' => $labels,
+                'total_labels' => count($labels),
+                'packing_id' => $packing_id
+            ]
+        ];
+    } else {
+        $response = [
+            'success' => false,
+            'message' => 'Gagal membuat label'
+        ];
+    }
+    
+    $this->output
+        ->set_content_type('application/json')
+        ->set_output(json_encode($response));
+}
+
+/**
+ * API untuk check label (single dan multi)
+ */
+// public function api_check_label($label_code) {
+//     $label = $this->Gudang_model->get_label_by_code($label_code);
+    
+//     if ($label) {
+//         // Get packing details
+//         $packing = $this->Gudang_model->get_packing_detail($label['packing_id']);
+        
+//         // Get all labels for this packing
+//         $all_labels = $this->Gudang_model->get_labels_by_packing($label['packing_id']);
+        
+//         // Determine next valid actions
+//         $next_actions = $this->_get_next_label_actions($label['status'], $label['label_type']);
+        
+//         $response = [
+//             'success' => true,
+//             'data' => [
+//                 'label' => $label,
+//                 'packing' => $packing,
+//                 'all_labels' => $all_labels,
+//                 'next_actions' => $next_actions,
+//                 'is_multi_label' => $label['label_type'] === 'master' || $label['label_type'] === 'child'
+//             ]
+//         ];
+//     } else {
+//         $response = [
+//             'success' => false,
+//             'message' => 'Label tidak ditemukan'
+//         ];
+//     }
+    
+//     $this->output
+//         ->set_content_type('application/json')
+//         ->set_output(json_encode($response));
+// }
+
+/**
+ * API untuk process label scan (single dan multi)
+ */
+public function api_process_label_scan() {
+    $label_id = $this->input->post('label_id');
+    $label_code = $this->input->post('label_code');
+    $action = $this->input->post('action');
+    $user_id = $this->session->userdata('user_id');
+    
+    if (empty($label_id) && !empty($label_code)) {
+        // Get label ID from code
+        $this->db->select('id');
+        $this->db->where('label_code', $label_code);
+        $label = $this->db->get('labels')->row_array();
+        $label_id = $label['id'] ?? null;
+    }
+    
+    if (empty($label_id) || empty($action)) {
+        $response = [
+            'success' => false,
+            'message' => 'Data tidak lengkap'
+        ];
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode($response));
+        return;
+    }
+    
+    $result = $this->Gudang_model->process_label_scan($label_id, $action, $user_id);
+    
+    if ($result) {
+        // Get updated label info
+        $label = $this->Gudang_model->get_label_by_code($label_code);
+        
+        $response = [
+            'success' => true,
+            'message' => 'Scan berhasil diproses',
+            'data' => [
+                'label_id' => $label_id,
+                'label_code' => $label_code,
+                'action' => $action,
+                'new_status' => $label['status'] ?? $action,
+                'timestamp' => date('Y-m-d H:i:s')
+            ]
+        ];
+    } else {
+        $response = [
+            'success' => false,
+            'message' => 'Gagal memproses scan'
+        ];
+    }
+    
+    $this->output
+        ->set_content_type('application/json')
+        ->set_output(json_encode($response));
+}
+
+/**
+ * API untuk batch scan (multiple labels)
+ */
+public function api_batch_scan_labels() {
+    $label_codes = $this->input->post('label_codes');
+    $action = $this->input->post('action');
+    $user_id = $this->session->userdata('user_id');
+    
+    if (empty($label_codes) || !is_array($label_codes) || empty($action)) {
+        $response = [
+            'success' => false,
+            'message' => 'Data tidak lengkap'
+        ];
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode($response));
+        return;
+    }
+    
+    $results = [];
+    $success_count = 0;
+    $failed_count = 0;
+    
+    foreach ($label_codes as $label_code) {
+        $this->db->select('id');
+        $this->db->where('label_code', $label_code);
+        $label = $this->db->get('labels')->row_array();
+        
+        if ($label) {
+            $result = $this->Gudang_model->process_label_scan($label['id'], $action, $user_id);
+            
+            if ($result) {
+                $success_count++;
+                $results[] = [
+                    'label_code' => $label_code,
+                    'status' => 'success'
+                ];
+            } else {
+                $failed_count++;
+                $results[] = [
+                    'label_code' => $label_code,
+                    'status' => 'failed'
+                ];
+            }
+        } else {
+            $failed_count++;
+            $results[] = [
+                'label_code' => $label_code,
+                'status' => 'not_found'
+            ];
+        }
+    }
+    
+    $response = [
+        'success' => $success_count > 0,
+        'message' => "Diproses: {$success_count} sukses, {$failed_count} gagal",
+        'data' => [
+            'total' => count($label_codes),
+            'success' => $success_count,
+            'failed' => $failed_count,
+            'results' => $results
+        ]
+    ];
+    
+    $this->output
+        ->set_content_type('application/json')
+        ->set_output(json_encode($response));
+}
+
+/**
+ * API untuk get label statistics
+ */
+public function api_label_statistics() {
+    $date = $this->input->get('date') ?: date('Y-m-d');
+    
+    $stats = $this->Gudang_model->get_label_statistics($date);
+    
+    $response = [
+        'success' => true,
+        'data' => $stats
+    ];
+    
+    $this->output
+        ->set_content_type('application/json')
+        ->set_output(json_encode($response));
+}
+
+/**
+ * API untuk cetak label (single dan multiple)
+ */
+public function api_cetak_label_batch() {
+    $label_ids = $this->input->post('label_ids');
+    $packing_id = $this->input->post('packing_id');
+    
+    if (empty($label_ids) && empty($packing_id)) {
+        $response = [
+            'success' => false,
+            'message' => 'Tidak ada label untuk dicetak'
+        ];
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode($response));
+        return;
+    }
+    
+    // Jika packing_id diberikan, get semua labels untuk packing tersebut
+    if ($packing_id && empty($label_ids)) {
+        $labels = $this->Gudang_model->get_labels_by_packing($packing_id);
+        $label_ids = array_column($labels, 'id');
+    }
+    
+    // Update label status to printed
+    $this->db->where_in('id', $label_ids);
+    $this->db->update('labels', [
+        'status' => 'printed',
+        'printed_at' => date('Y-m-d H:i:s')
+    ]);
+    
+    // Get label data for printing
+    $this->db->where_in('id', $label_ids);
+    $labels_data = $this->db->get('labels')->result_array();
+    
+    $response = [
+        'success' => true,
+        'message' => 'Label siap dicetak',
+        'data' => [
+            'labels' => $labels_data,
+            'total' => count($labels_data),
+            'print_time' => date('Y-m-d H:i:s')
+        ]
+    ];
+    
+    $this->output
+        ->set_content_type('application/json')
+        ->set_output(json_encode($response));
+}
+
+// ==================== HELPER METHODS ====================
+
+/**
+ * Get next valid actions for label
+ */
+private function _get_next_label_actions($current_status, $label_type) {
+    $actions = [
+        'canPrint' => $current_status === 'active',
+        'canScanOut' => in_array($current_status, ['active', 'printed']),
+        'canScanIn' => $current_status === 'scanned_out',
+        'canComplete' => $current_status === 'scanned_in',
+        'canVoid' => $current_status !== 'void'
+    ];
+    
+    // Untuk master label, hanya bisa scan jika semua child sudah ready
+    if ($label_type === 'master') {
+        $actions['canScanOut'] = false;
+        $actions['canScanIn'] = false;
+        $actions['canComplete'] = false;
+    }
+    
+    return $actions;
+}
+
+
+
+
+
+
+	
 }
