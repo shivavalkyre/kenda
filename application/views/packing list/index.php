@@ -1919,18 +1919,11 @@ function formatTime(timeString) {
 
 // ===== FUNGSI CETAK LABEL YANG DIPERBAIKI =====
 
+
+
 function printLabel(noPacking, packingId) {
-    if (!packingId) {
-        alert('ID packing tidak valid');
-        return;
-    }
-    
-    // Buka halaman cetak label di tab baru
-    const printUrl = `${baseUrl}/packing-list/cetak-label/${packingId}`;
-    window.open(printUrl, '_blank');
-    
-    // Update status menjadi printed (opsional)
-    updatePackingStatus(packingId, SCAN_STATUS.PRINTED);
+    // Redirect ke halaman pilih format label
+    window.location.href = baseUrl + 'packing-list/pilih-format/' + packingId;
 }
 
 // function printSelectedLabels() {
@@ -2151,6 +2144,74 @@ function setupAutoPrint(printWindow) {
             }
         };
     }
+}
+
+// Cari function generateLabel() atau fungsi yang memanggil api generate label
+// Dan ganti dengan:
+
+function generateLabelFormat() {
+    const packingId = document.getElementById('packing_id').value; // Anda perlu tambahkan input tersembunyi untuk packing_id
+    const labelCount = document.getElementById('label_count').value || 1;
+    const labelFormat = document.getElementById('label_format').value || 'kenda';
+    const labelType = labelCount > 1 ? 'multiple' : 'single';
+    
+    if (!packingId) {
+        showToast('Packing ID tidak ditemukan', 'error');
+        return;
+    }
+    
+    // Show loading
+    showToast('Membuat label...', 'info');
+    
+    // Gunakan endpoint yang benar
+    const url = baseUrl + 'gudang/api_generate_label_format'; // Perhatikan: 'gudang' bukan 'packing-list'
+    
+    // Data yang akan dikirim
+    const data = {
+        packing_id: packingId,
+        label_count: labelCount,
+        label_format: labelFormat,
+        label_type: labelType
+    };
+    
+    // Log untuk debugging
+    console.log('Generate Label Data:', data);
+    console.log('URL:', url);
+    
+    // Kirim request
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        // Cek jika response adalah JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Response bukan JSON');
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Generate Label Response:', data);
+        
+        if (data.success) {
+            showToast('Label berhasil dibuat!', 'success');
+            
+            // Redirect ke halaman view labels
+            setTimeout(() => {
+                window.location.href = baseUrl + 'gudang/view_packing_labels/' + packingId;
+            }, 1500);
+        } else {
+            showToast('Gagal: ' + (data.message || 'Unknown error'), 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Terjadi kesalahan: ' + error.message, 'error');
+    });
 }
 
 // Fungsi untuk cetak packing list (bukan label)

@@ -78,6 +78,13 @@ $route['labels/statistics'] = 'Gudang/api_label_statistics';
 $route['labels/print-batch'] = 'Gudang/api_cetak_label_batch';
 $route['labels/list/(:num)'] = 'Gudang/api_get_labels_by_packing/$1';
 
+// ==================== LABEL FORMAT ROUTES ====================
+$route['packing-list/pilih-format/(:num)'] = 'Gudang/pilih_format_label/$1';
+$route['packing-list/api/generate-format'] = 'Gudang/api_generate_label_format';
+$route['packing-list/cetak-format/(:num)/(:any)'] = 'Gudang/cetak_label_format/$1/$2';
+$route['packing-list/cetak-multiple-format'] = 'Gudang/cetak_multiple_labels_format';
+$route['packing-list/view-labels/(:num)'] = 'Gudang/view_packing_labels/$1';
+
 // ==================== DEFAULT ROUTES ====================
 $route['default_controller'] = 'Gudang';
 $route['404_override'] = '';

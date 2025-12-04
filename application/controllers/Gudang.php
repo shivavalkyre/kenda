@@ -1667,36 +1667,84 @@ public function api_update_status()
 
 			// ==================== LABEL API METHODS ====================
 
-/**
- * API untuk generate labels untuk packing list
- */
-public function api_generate_labels() {
-    $packing_id = $this->input->post('packing_id');
-    $label_count = $this->input->post('label_count') ?: 1;
-    $label_type = $label_count > 1 ? 'master' : 'single';
+			/**
+			 * API untuk generate labels untuk packing list
+			 */
+
+			// Di Gudang.php - perbaiki method api_generate_label_format()
+public function api_generate_label_format() {
+    // Set response header sebagai JSON
+    $this->output->set_content_type('application/json');
     
-    $labels = $this->Gudang_model->create_labels_for_packing($packing_id, $label_count, $label_type);
-    
-    if ($labels) {
+    try {
+        // Log untuk debugging
+        log_message('debug', 'API Generate Format Called');
+        
+        // Get POST data
+        $packing_id = $this->input->post('packing_id');
+        $label_count = $this->input->post('label_count') ?: 1;
+        $label_format = $this->input->post('label_format') ?: 'kenda';
+        $label_type = $this->input->post('label_type') ?: 'single';
+        
+        // Validasi input
+        if (empty($packing_id)) {
+            throw new Exception('Packing ID diperlukan');
+        }
+        
+        $packing_id = (int)$packing_id;
+        $label_count = (int)$label_count;
+        
+        // Validasi packing exists
+        $this->db->where('id', $packing_id);
+        $packing = $this->db->get('packing_list')->row();
+        
+        if (!$packing) {
+            throw new Exception("Packing list #{$packing_id} tidak ditemukan");
+        }
+        
+        // Validasi format
+        $valid_formats = ['kenda', 'xds', 'btg', 'standard'];
+        if (!in_array($label_format, $valid_formats)) {
+            throw new Exception('Format label tidak valid. Pilih: kenda, xds, btg, standard');
+        }
+        
+        // Generate labels menggunakan model
+        $labels = $this->Gudang_model->generate_labels_with_format(
+            $packing_id, 
+            $label_count, 
+            $label_format, 
+            $label_type
+        );
+        
+        if ($labels === false || empty($labels)) {
+            throw new Exception('Gagal generate label. Tidak ada label yang dibuat.');
+        }
+        
+        // Response success
         $response = [
             'success' => true,
-            'message' => 'Label berhasil dibuat',
+            'message' => 'Label berhasil digenerate',
             'data' => [
                 'labels' => $labels,
                 'total_labels' => count($labels),
-                'packing_id' => $packing_id
+                'packing_id' => $packing_id,
+                'format' => $label_format
             ]
         ];
-    } else {
+        
+    } catch (Exception $e) {
+        // Log error
+        log_message('error', 'API Generate Label Error: ' . $e->getMessage());
+        
         $response = [
             'success' => false,
-            'message' => 'Gagal membuat label'
+            'message' => 'Error: ' . $e->getMessage()
         ];
     }
     
-    $this->output
-        ->set_content_type('application/json')
-        ->set_output(json_encode($response));
+    // Output JSON
+    echo json_encode($response);
+    return;
 }
 
 /**
@@ -1956,9 +2004,536 @@ private function _get_next_label_actions($current_status, $label_type) {
 }
 
 
+					// ==================== LABEL GENERATION & PRINTING ====================
+
+	/**
+	 * Halaman untuk memilih format label
+	 */
+	public function pilih_format_label($packing_id) {
+		$data = [
+			'title' => 'Pilih Format Label - KENDA',
+			'username' => $this->session->userdata('username'),
+			'active_menu' => 'packing',
+			'content' => 'packing list/pilih_format_label',
+			'packing_id' => $packing_id,
+			'packing' => $this->Gudang_model->get_packing_detail($packing_id)
+		];
+		
+		$this->load->view('template', $data);
+	}
+
+	/**
+	 * API untuk generate label dengan format
+	 */
+	// 	public function api_generate_label_format() {
+	// 	try {
+	// 		// Enable error reporting untuk debugging
+	// 		error_reporting(E_ALL);
+	// 		ini_set('display_errors', 1);
+			
+	// 		$post = $this->input->post();
+			
+	// 		// Log input untuk debugging
+	// 		log_message('debug', 'API Generate Format - POST Data: ' . print_r($post, true));
+			
+	// 		// Validasi input
+	// 		if (empty($post['packing_id'])) {
+	// 			throw new Exception('Packing ID diperlukan');
+	// 		}
+			
+	// 		$packing_id = (int)$post['packing_id'];
+	// 		$label_count = isset($post['label_count']) ? (int)$post['label_count'] : 1;
+	// 		$label_format = $post['label_format'] ?? 'kenda';
+	// 		$label_type = $post['label_type'] ?? 'single';
+			
+	// 		// Validasi nilai
+	// 		if ($packing_id <= 0) {
+	// 			throw new Exception('Packing ID tidak valid');
+	// 		}
+			
+	// 		if ($label_count < 1) {
+	// 			$label_count = 1;
+	// 		}
+			
+	// 		// Cek apakah packing exists
+	// 		$this->db->where('id', $packing_id);
+	// 		$packing = $this->db->get('packing_list')->row();
+			
+	// 		if (!$packing) {
+	// 			throw new Exception("Packing list #{$packing_id} tidak ditemukan");
+	// 		}
+			
+	// 		// Panggil model dengan try-catch
+	// 		$labels = $this->Gudang_model->generate_labels_with_format($packing_id, $label_count, $label_format, $label_type);
+			
+	// 		if ($labels === false) {
+	// 			throw new Exception('Gagal generate label. Silakan cek log server.');
+	// 		}
+			
+	// 		$response = [
+	// 			'success' => true,
+	// 			'message' => 'Label berhasil digenerate',
+	// 			'data' => [
+	// 				'labels' => $labels,
+	// 				'total_labels' => count($labels),
+	// 				'packing_id' => $packing_id,
+	// 				'format' => $label_format
+	// 			]
+	// 		];
+			
+	// 	} catch (Exception $e) {
+	// 		$response = [
+	// 			'success' => false,
+	// 			'message' => 'Error: ' . $e->getMessage(),
+	// 			'debug_info' => [
+	// 				'file' => $e->getFile(),
+	// 				'line' => $e->getLine(),
+	// 				'trace' => $e->getTraceAsString()
+	// 			]
+	// 		];
+			
+	// 		// Log error
+	// 		log_message('error', 'API Generate Label Format Error: ' . $e->getMessage());
+	// 		log_message('error', 'Trace: ' . $e->getTraceAsString());
+	// 	}
+		
+	// 	// Pastikan output JSON
+	// 	$this->output
+	// 		->set_content_type('application/json')
+	// 		->set_output(json_encode($response, JSON_PRETTY_PRINT));
+	// }
+	/**
+	 * Cetak label dengan format tertentu
+	 */
+	public function cetak_label_format($label_id, $format = 'kenda') {
+		// Update label status menjadi printed
+		$this->Gudang_model->update_label_printed($label_id);
+		
+		$label_data = $this->get_label_data_for_print($label_id, $format);
+		
+		if (!$label_data) {
+			show_404();
+		}
+		
+		$data = [
+			'label_data' => $label_data,
+			'print_time' => date('Y-m-d H:i:s')
+		];
+		
+		// Load view berdasarkan format
+		$view_name = "packing list/cetak_label_{$format}";
+		$this->load->view($view_name, $data);
+	}
+
+	/**
+	 * Cetak multiple labels sekaligus
+	 */
+	public function cetak_multiple_labels_format() {
+		$label_ids = $this->input->get('ids');
+		$format = $this->input->get('format') ?? 'kenda';
+		
+		if (empty($label_ids)) {
+			show_error('Tidak ada label yang dipilih');
+		}
+		
+		$ids_array = explode(',', $label_ids);
+		$labels_data = [];
+		
+		foreach ($ids_array as $label_id) {
+			// Update status ke printed
+			$this->Gudang_model->update_label_printed($label_id);
+			
+			$label_data = $this->get_label_data_for_print($label_id, $format);
+			if ($label_data) {
+				$labels_data[] = $label_data;
+			}
+		}
+		
+		if (empty($labels_data)) {
+			show_error('Tidak ada data label yang valid');
+		}
+		
+		$data = [
+			'labels_data' => $labels_data,
+			'format' => $format,
+			'print_time' => date('Y-m-d H:i:s'),
+			'total_labels' => count($labels_data)
+		];
+		
+		// Load view berdasarkan format
+		$view_name = "packing list/cetak_multiple_labels_{$format}";
+		$this->load->view($view_name, $data);
+	}
+
+	/**
+	 * View untuk melihat semua label yang sudah digenerate
+	 */
+	public function view_packing_labels($packing_id) {
+		$data = [
+			'title' => 'Daftar Label - KENDA',
+			'username' => $this->session->userdata('username'),
+			'active_menu' => 'packing',
+			'content' => 'packing list/view_packing_labels',
+			'packing_id' => $packing_id,
+			'packing' => $this->Gudang_model->get_packing_detail($packing_id),
+			'labels' => $this->Gudang_model->get_labels_by_packing_id($packing_id)
+		];
+		
+		$this->load->view('template', $data);
+	}
 
 
+	public function cetak_single_label($label_id, $format = 'kenda') {
+    $this->load->model('Gudang_model');
+    
+    // Validasi label
+    $this->db->where('id', $label_id);
+    $label = $this->db->get('labels')->row_array();
+    
+    if (!$label) {
+        show_error('Label tidak ditemukan');
+    }
+    
+    // Update status label
+    $this->db->where('id', $label_id);
+    $this->db->update('labels', [
+        'status' => 'printed',
+        'printed_at' => date('Y-m-d H:i:s')
+    ]);
+    
+    // Get data untuk cetak
+    $label_data = $this->get_label_data_for_print($label_id, $format);
+    
+    if (!$label_data) {
+        show_error('Data label tidak ditemukan');
+    }
+    
+    $data = [
+        'label_data' => $label_data,
+        'format' => $format,
+        'print_time' => date('Y-m-d H:i:s')
+    ];
+    
+    // Tentukan view berdasarkan format
+    $view_name = "label/cetak_{$format}";
+    $this->load->view($view_name, $data);
+}
 
+/**
+ * Cetak multiple labels
+ */
+// Di Gudang.php - perbaiki method cetak_multiple_labels()
+// public function cetak_multiple_labels() {
+//     try {
+//         // Get IDs from query string
+//         $ids = $this->input->get('ids');
+//         $format = $this->input->get('format') ?: 'kenda';
+        
+//         if (empty($ids)) {
+//             show_error('Tidak ada label yang dipilih untuk dicetak');
+//             return;
+//         }
+        
+//         // Convert string to array
+//         $ids_array = explode(',', $ids);
+//         $ids_array = array_map('intval', $ids_array);
+//         $ids_array = array_filter($ids_array);
+        
+//         if (empty($ids_array)) {
+//             show_error('Tidak ada ID label yang valid');
+//             return;
+//         }
+        
+//         // Get labels data
+//         $this->db->where_in('id', $ids_array);
+//         $labels = $this->db->get('labels')->result_array();
+        
+//         if (empty($labels)) {
+//             show_error('Label tidak ditemukan');
+//             return;
+//         }
+        
+//         // Update status semua label ke printed
+//         $this->db->where_in('id', $ids_array);
+//         $this->db->update('labels', [
+//             'status' => 'printed',
+//             'printed_at' => date('Y-m-d H:i:s')
+//         ]);
+        
+//         // Prepare data untuk view
+//         $labels_data = [];
+//         foreach ($labels as $label) {
+//             $label_data = $this->get_label_data_for_print($label['id'], $format);
+//             if ($label_data) {
+//                 $labels_data[] = $label_data;
+//             }
+//         }
+        
+//         $data = [
+//             'labels_data' => $labels_data,
+//             'format' => $format,
+//             'total_labels' => count($labels_data),
+//             'print_time' => date('Y-m-d H:i:s')
+//         ];
+        
+//         // Load view berdasarkan format
+//         $view_name = "packing list/cetak_multiple_labels_kenda"; // Pastikan view ini ada
+        
+//         // Debug info (hapus di production)
+//         $data['debug_info'] = [
+//             'ids_input' => $ids,
+//             'ids_array' => $ids_array,
+//             'count' => count($labels),
+//             'format' => $format
+//         ];
+        
+//         $this->load->view($view_name, $data);
+        
+//     } catch (Exception $e) {
+//         show_error('Terjadi kesalahan: ' . $e->getMessage());
+//     }
+// }
+
+		public function cetak_multiple_labels() {
+    try {
+        // Get IDs from query string
+        $ids = $this->input->get('ids');
+        $format = $this->input->get('format') ?: 'kenda';
+        
+        if (empty($ids)) {
+            show_error('Tidak ada label yang dipilih untuk dicetak');
+            return;
+        }
+        
+        // Convert string to array
+        $ids_array = explode(',', $ids);
+        $ids_array = array_map('intval', $ids_array);
+        $ids_array = array_filter($ids_array);
+        
+        if (empty($ids_array)) {
+            show_error('Tidak ada ID label yang valid');
+            return;
+        }
+        
+        // Get labels data
+        $this->db->where_in('id', $ids_array);
+        $labels = $this->db->get('labels')->result_array();
+        
+        if (empty($labels)) {
+            show_error('Label tidak ditemukan');
+            return;
+        }
+        
+        // Update status semua label ke printed
+        $this->db->where_in('id', $ids_array);
+        $this->db->update('labels', [
+            'status' => 'printed',
+            'printed_at' => date('Y-m-d H:i:s')
+        ]);
+        
+        // Prepare data untuk view
+        $labels_data = [];
+        foreach ($labels as $label) {
+            $label_data = $this->get_label_data_for_print($label['id'], $format);
+            if ($label_data) {
+                $labels_data[] = $label_data;
+            }
+        }
+        
+        // Tambahkan ini untuk debug
+        // echo "<pre>"; print_r($labels_data); echo "</pre>"; die();
+        
+        $data = [
+            'labels_data' => $labels_data,
+            'format' => $format,
+            'total_labels' => count($labels_data),
+            'print_time' => date('Y-m-d H:i:s')
+        ];
+        
+        // Load view berdasarkan format
+        $view_name = "packing list/cetak_multiple_labels_{$format}";
+        
+        // Debug info (hapus di production)
+        // $data['debug_info'] = [
+        //     'ids_input' => $ids,
+        //     'ids_array' => $ids_array,
+        //     'count' => count($labels),
+        //     'format' => $format,
+        //     'labels_data_sample' => $labels_data[0] ?? 'no data'
+        // ];
+        
+        $this->load->view($view_name, $data);
+        
+    } catch (Exception $e) {
+        show_error('Terjadi kesalahan: ' . $e->getMessage());
+    }
+}
+
+// Helper method untuk get label data
+private function get_label_data_for_print($label_id, $format = 'kenda') {
+    $this->db->where('id', $label_id);
+    $label = $this->db->get('labels')->row_array();
+    
+    if (!$label) {
+        return false;
+    }
+    
+    // Get packing data dengan semua field yang diperlukan
+    $this->db->where('id', $label['packing_id']);
+    $packing = $this->db->get('packing_list')->row_array();
+    
+    if (!$packing) {
+        return false;
+    }
+    
+    // Get items dengan semua data dari database
+    $this->db->select('pi.*, b.*');
+    $this->db->from('packing_items pi');
+    $this->db->join('barang b', 'pi.kode_barang = b.kode_barang', 'left');
+    $this->db->where('pi.packing_id', $label['packing_id']);
+    $items = $this->db->get()->result_array();
+    
+    // Hitung total quantity dari items
+    $total_qty = 0;
+    foreach ($items as $item) {
+        $total_qty += (int)$item['qty'];
+    }
+    
+    // Format data untuk label
+    $formatted_data = [
+        'label' => $label,
+        'packing' => $packing,
+        'items' => $items,
+        'format' => $format,
+        'total_qty' => $total_qty,
+        'item_count' => count($items)
+    ];
+    
+    // Tambahkan data spesifik berdasarkan format
+    switch ($format) {
+        case 'kenda':
+            $formatted_data = array_merge($formatted_data, $this->_format_kenda_label($packing, $items, $label));
+            break;
+        case 'xds':
+            $formatted_data = array_merge($formatted_data, $this->_format_xds_label($packing, $items, $label));
+            break;
+        case 'btg':
+            $formatted_data = array_merge($formatted_data, $this->_format_btg_label($packing, $items, $label));
+            break;
+        case 'standard':
+            $formatted_data = array_merge($formatted_data, $this->_format_standard_label($packing, $items, $label));
+            break;
+    }
+    
+    return $formatted_data;
+}
+
+// Tambahkan method format helper di controller jika belum ada
+private function _format_kenda_label($packing, $items, $label) {
+    $first_item = $items[0] ?? [];
+    
+    // Ambil data dari database packing atau items
+    $po_no = !empty($packing['po_no']) ? $packing['po_no'] : 
+             (!empty($first_item['no_po']) ? $first_item['no_po'] : 'N/A');
+    
+    return [
+        'company_name' => 'PT. KENDA RUBBER INDONESIA',
+        'po_no' => $po_no,
+        'order_qty' => $packing['jumlah_item'] ?? 0,
+        'bales_no' => isset($label['bale_number']) ? 
+                     "{$label['bale_number']}/{$label['total_bales']}" : '1/1',
+        'qty_per_bale' => $first_item['qty'] ?? 
+                         (isset($packing['jumlah_item']) ? $packing['jumlah_item'] : 0),
+        'nw' => !empty($packing['net_weight']) ? $packing['net_weight'] : 
+                (!empty($first_item['net_weight']) ? $first_item['net_weight'] : '0.00'),
+        'gw' => !empty($packing['gross_weight']) ? $packing['gross_weight'] : 
+                (!empty($first_item['gross_weight']) ? $first_item['gross_weight'] : '0.00'),
+        'item_code' => $first_item['kode_barang'] ?? 'N/A',
+        'cfr' => !empty($packing['cfr']) ? $packing['cfr'] : 
+                (!empty($first_item['cfr']) ? $first_item['cfr'] : 'N/A'),
+        'description' => $first_item['nama_barang'] ?? 
+                        (!empty($packing['description']) ? $packing['description'] : 'Product'),
+        'made_in' => 'MADE IN INDONESIA'
+    ];
+}
+
+// Tambahkan method untuk format XDS yang benar
+private function _format_xds_label($packing, $items, $label) {
+    $first_item = $items[0] ?? [];
+    
+    return [
+        'company_name' => 'XDS BICYCLE CAMBODIA',
+        'product_name' => 'BICYCLE TIRE',
+        'po_no' => !empty($packing['po_no']) ? $packing['po_no'] : 
+                  (!empty($first_item['no_po']) ? $first_item['no_po'] : 'N/A'),
+        'size' => !empty($packing['size']) ? $packing['size'] : 
+                 (!empty($first_item['size']) ? $first_item['size'] : 'N/A'),
+        'kenda_size' => !empty($packing['kenda_size']) ? $packing['kenda_size'] : 
+                       (!empty($first_item['kenda_size']) ? $first_item['kenda_size'] : 'N/A'),
+        'item_no' => $first_item['kode_barang'] ?? 'N/A',
+        'pkg_no' => $packing['no_packing'] ?? '',
+        'qty' => $packing['jumlah_item'] ?? 0,
+        'nw' => !empty($packing['net_weight']) ? $packing['net_weight'] : 
+                (!empty($first_item['net_weight']) ? $first_item['net_weight'] : '0.00'),
+        'gw' => !empty($packing['gross_weight']) ? $packing['gross_weight'] : 
+                (!empty($first_item['gross_weight']) ? $first_item['gross_weight'] : '0.00'),
+        'made_in' => 'MADE IN INDONESIA'
+    ];
+}
+
+/**
+ * Format untuk label BTG (sesuai gambar 3)
+ */
+private function _format_btg_label($packing, $items) {
+    $first_item = $items[0] ?? [];
+    
+    return [
+        'company_name' => 'BIG PACTUAL COMMODITIES SERTRADING S.A',
+        'vendor_name' => 'KENDA RUBBER',
+        'po_no' => $first_item['no_po'] ?? '6586-4',
+        'codigo' => $first_item['codigo'] ?? '59338',
+        'product_name' => 'PNEU PUBLICICLETA',
+        'size' => $first_item['size'] ?? '26*1.95 K1300 BK',
+        'color' => $first_item['color'] ?? '26*1.95 K1300 PRETO',
+        'qty' => $first_item['qty'] ?? 25,
+        'nw' => $first_item['net_weight'] ?? '18.75',
+        'gw' => $first_item['gross_weight'] ?? '18.95',
+        'made_in' => 'MADE IN INDONESIA',
+        'import_address' => 'BTG PACTUAL COMMODITIES SERTRADING S.A ROD. GOVERNADOR MARIO COVAS 3101, KM 282. AREA 4,QUADRA 2; PADRE MATHIAS – CARIACICA – ZIP CODE: 29157-100 – ESPIRITO SANTO/ES.BRAZIL',
+        'cnpj' => '04.626.426/0007-00'
+    ];
+}
+
+/**
+ * Format untuk label Standard (sesuai gambar 4)
+ */
+private function _format_standard_label($packing, $items) {
+    $first_item = $items[0] ?? [];
+    
+    return [
+        'vendor_name' => 'KENDA RUBBER',
+        'part_no' => $first_item['part_no'] ?? '757745',
+        'description' => $first_item['nama_barang'] ?? '700*28/32C R/V -22*28T 48L NI',
+        'qty' => $first_item['qty'] ?? 50,
+        'made_in' => 'MADE IN INDONESIA',
+        'production_date' => date('Ymd'),
+        'batch_info' => isset($packing['bale_number']) ? "{$packing['bale_number']} OF {$packing['total_bales']}" : "29 OF 44"
+    ];
+}
+
+/**
+ * Format default label
+ */
+private function _format_default_label($packing, $items) {
+    return [
+        'company_name' => 'PT. KENDA RUBBER INDONESIA',
+        'packing_no' => $packing['no_packing'],
+        'customer' => $packing['customer'],
+        'date' => $packing['tanggal'],
+        'total_items' => $packing['jumlah_item'],
+        'made_in' => 'MADE IN INDONESIA'
+    ];
+}
 
 	
 }
