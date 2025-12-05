@@ -60,6 +60,17 @@ defined('BASEPATH') OR exit('No direct script access allowed');
         <div class="col-12">
             <div class="d-flex flex-wrap gap-2 justify-content-between">
                 <div class="d-flex flex-wrap gap-2">
+                    <!-- Tombol toggle untuk menampilkan nonaktif -->
+                    <?php if(!$show_nonaktif): ?>
+                        <a href="<?php echo site_url('gudang/barang?show_nonaktif=true'); ?>" class="btn btn-outline-warning">
+                            <i class="fas fa-eye-slash me-2"></i>Tampilkan Nonaktif
+                        </a>
+                    <?php else: ?>
+                        <a href="<?php echo site_url('gudang/barang'); ?>" class="btn btn-outline-success">
+                            <i class="fas fa-eye me-2"></i>Sembunyikan Nonaktif
+                        </a>
+                    <?php endif; ?>
+                    
                     <button class="btn btn-kenda" data-bs-toggle="modal" data-bs-target="#tambahBarangModal">
                         <i class="fas fa-plus me-2"></i>Tambah Barang
                     </button>
@@ -75,6 +86,9 @@ defined('BASEPATH') OR exit('No direct script access allowed');
                             <li><a class="dropdown-item" href="#" data-filter="tube">Tube</a></li>
                             <li><a class="dropdown-item" href="#" data-filter="tire">Tire</a></li>
                             <li><a class="dropdown-item" href="#" data-filter="stok-minimum">Stok Minimum</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" data-filter="aktif">Hanya Aktif</a></li>
+                            <li><a class="dropdown-item" href="#" data-filter="nonaktif">Hanya Nonaktif</a></li>
                         </ul>
                     </div>
                 </div>
@@ -97,6 +111,11 @@ defined('BASEPATH') OR exit('No direct script access allowed');
                 <div class="card-header bg-white py-3">
                     <h5 class="card-title mb-0">
                         <i class="fas fa-list me-2"></i>Daftar Barang
+                        <?php if($show_nonaktif): ?>
+                            <span class="badge bg-warning ms-2">
+                                <i class="fas fa-eye-slash me-1"></i>Menampilkan Nonaktif
+                            </span>
+                        <?php endif; ?>
                         <?php if(isset($search) && !empty($search)): ?>
                             <span class="badge bg-info ms-2">Search: "<?php echo htmlspecialchars($search, ENT_QUOTES, 'UTF-8'); ?>"</span>
                         <?php endif; ?>
@@ -134,7 +153,9 @@ defined('BASEPATH') OR exit('No direct script access allowed');
                                     ?>
                                         <tr data-kategori="<?php echo htmlspecialchars($barang['kategori'], ENT_QUOTES, 'UTF-8'); ?>" 
                                             data-stok="<?php echo $barang['stok']; ?>" 
-                                            data-stok-min="<?php echo $barang['stok_minimum']; ?>">
+                                            data-stok-min="<?php echo $barang['stok_minimum']; ?>"
+                                            data-status="<?php echo htmlspecialchars($barang['status'], ENT_QUOTES, 'UTF-8'); ?>"
+                                            class="<?php echo $barang['status'] == 'nonaktif' ? 'table-warning' : ''; ?>">
                                             <td>
                                                 <input type="checkbox" class="row-checkbox" value="<?php echo htmlspecialchars($barang['kode_barang'], ENT_QUOTES, 'UTF-8'); ?>">
                                             </td>
@@ -195,56 +216,66 @@ defined('BASEPATH') OR exit('No direct script access allowed');
                                                             data-bs-toggle="tooltip" title="Edit">
                                                         <i class="fas fa-edit"></i>
                                                     </button>
+                                                    <?php if($barang['status'] == 'nonaktif'): ?>
+                                                        <!-- Tombol aktifkan untuk barang nonaktif -->
+                                                        <button type="button" class="btn btn-sm btn-outline-success aktifkan-btn" 
+                                                                data-kode="<?php echo htmlspecialchars($barang['kode_barang'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                                data-bs-toggle="tooltip" title="Aktifkan Barang">
+                                                            <i class="fas fa-check"></i>
+                                                        </button>
+                                                    <?php endif; ?>
                                                     <div class="dropdown">
                                                         <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                                             <i class="fas fa-ellipsis-v"></i>
                                                         </button>
                                                         <ul class="dropdown-menu dropdown-menu-end">
-                                                            <li>
-                                                                <a class="dropdown-item stok-awal-btn" href="#"
-                                                                   data-kode="<?php echo htmlspecialchars($barang['kode_barang'], ENT_QUOTES, 'UTF-8'); ?>"
-                                                                   data-nama="<?php echo htmlspecialchars($barang['nama_barang'], ENT_QUOTES, 'UTF-8'); ?>"
-                                                                   data-kategori="<?php echo htmlspecialchars($barang['kategori'], ENT_QUOTES, 'UTF-8'); ?>"
-                                                                   data-satuan="<?php echo htmlspecialchars($barang['satuan'], ENT_QUOTES, 'UTF-8'); ?>">
-                                                                    <i class="fas fa-database me-2"></i>Input Stok Awal
-                                                                </a>
-                                                            </li>
-                                                            <li>
-                                                                <a class="dropdown-item barang-masuk-btn" href="#"
-                                                                   data-kode="<?php echo htmlspecialchars($barang['kode_barang'], ENT_QUOTES, 'UTF-8'); ?>"
-                                                                   data-nama="<?php echo htmlspecialchars($barang['nama_barang'], ENT_QUOTES, 'UTF-8'); ?>"
-                                                                   data-kategori="<?php echo htmlspecialchars($barang['kategori'], ENT_QUOTES, 'UTF-8'); ?>"
-                                                                   data-satuan="<?php echo htmlspecialchars($barang['satuan'], ENT_QUOTES, 'UTF-8'); ?>"
-                                                                   data-stok="<?php echo $barang['stok']; ?>">
-                                                                    <i class="fas fa-arrow-down me-2"></i>Barang Masuk
-                                                                </a>
-                                                            </li>
-                                                            <li>
-                                                                <a class="dropdown-item barang-keluar-btn" href="#"
-                                                                   data-kode="<?php echo htmlspecialchars($barang['kode_barang'], ENT_QUOTES, 'UTF-8'); ?>"
-                                                                   data-nama="<?php echo htmlspecialchars($barang['nama_barang'], ENT_QUOTES, 'UTF-8'); ?>"
-                                                                   data-kategori="<?php echo htmlspecialchars($barang['kategori'], ENT_QUOTES, 'UTF-8'); ?>"
-                                                                   data-satuan="<?php echo htmlspecialchars($barang['satuan'], ENT_QUOTES, 'UTF-8'); ?>"
-                                                                   data-stok="<?php echo $barang['stok']; ?>">
-                                                                    <i class="fas fa-arrow-up me-2"></i>Barang Keluar
-                                                                </a>
-                                                            </li>
-                                                            <li>
-                                                                <a class="dropdown-item adjustment-btn" href="#"
-                                                                   data-kode="<?php echo htmlspecialchars($barang['kode_barang'], ENT_QUOTES, 'UTF-8'); ?>"
-                                                                   data-nama="<?php echo htmlspecialchars($barang['nama_barang'], ENT_QUOTES, 'UTF-8'); ?>"
-                                                                   data-kategori="<?php echo htmlspecialchars($barang['kategori'], ENT_QUOTES, 'UTF-8'); ?>"
-                                                                   data-satuan="<?php echo htmlspecialchars($barang['satuan'], ENT_QUOTES, 'UTF-8'); ?>"
-                                                                   data-stok="<?php echo $barang['stok']; ?>">
-                                                                    <i class="fas fa-exchange-alt me-2"></i>Adjustment
-                                                                </a>
-                                                            </li>
-                                                            <li><hr class="dropdown-divider"></li>
+                                                            <?php if($barang['status'] == 'aktif'): ?>
+                                                                <li>
+                                                                    <a class="dropdown-item stok-awal-btn" href="#"
+                                                                       data-kode="<?php echo htmlspecialchars($barang['kode_barang'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                                       data-nama="<?php echo htmlspecialchars($barang['nama_barang'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                                       data-kategori="<?php echo htmlspecialchars($barang['kategori'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                                       data-satuan="<?php echo htmlspecialchars($barang['satuan'], ENT_QUOTES, 'UTF-8'); ?>">
+                                                                        <i class="fas fa-database me-2"></i>Input Stok Awal
+                                                                    </a>
+                                                                </li>
+                                                                <li>
+                                                                    <a class="dropdown-item barang-masuk-btn" href="#"
+                                                                       data-kode="<?php echo htmlspecialchars($barang['kode_barang'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                                       data-nama="<?php echo htmlspecialchars($barang['nama_barang'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                                       data-kategori="<?php echo htmlspecialchars($barang['kategori'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                                       data-satuan="<?php echo htmlspecialchars($barang['satuan'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                                       data-stok="<?php echo $barang['stok']; ?>">
+                                                                        <i class="fas fa-arrow-down me-2"></i>Barang Masuk
+                                                                    </a>
+                                                                </li>
+                                                                <li>
+                                                                    <a class="dropdown-item barang-keluar-btn" href="#"
+                                                                       data-kode="<?php echo htmlspecialchars($barang['kode_barang'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                                       data-nama="<?php echo htmlspecialchars($barang['nama_barang'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                                       data-kategori="<?php echo htmlspecialchars($barang['kategori'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                                       data-satuan="<?php echo htmlspecialchars($barang['satuan'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                                       data-stok="<?php echo $barang['stok']; ?>">
+                                                                        <i class="fas fa-arrow-up me-2"></i>Barang Keluar
+                                                                    </a>
+                                                                </li>
+                                                                <li>
+                                                                    <a class="dropdown-item adjustment-btn" href="#"
+                                                                       data-kode="<?php echo htmlspecialchars($barang['kode_barang'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                                       data-nama="<?php echo htmlspecialchars($barang['nama_barang'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                                       data-kategori="<?php echo htmlspecialchars($barang['kategori'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                                       data-satuan="<?php echo htmlspecialchars($barang['satuan'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                                       data-stok="<?php echo $barang['stok']; ?>">
+                                                                        <i class="fas fa-exchange-alt me-2"></i>Adjustment
+                                                                    </a>
+                                                                </li>
+                                                                <li><hr class="dropdown-divider"></li>
+                                                            <?php endif; ?>
                                                             <li>
                                                                 <a class="dropdown-item text-danger hapus-btn" href="#"
                                                                    data-kode="<?php echo htmlspecialchars($barang['kode_barang'], ENT_QUOTES, 'UTF-8'); ?>"
                                                                    data-nama="<?php echo htmlspecialchars($barang['nama_barang'], ENT_QUOTES, 'UTF-8'); ?>">
-                                                                    <i class="fas fa-trash me-2"></i>Hapus
+                                                                    <i class="fas fa-trash me-2"></i><?php echo $barang['status'] == 'aktif' ? 'Hapus' : 'Hapus Permanen'; ?>
                                                                 </a>
                                                             </li>
                                                         </ul>
@@ -283,6 +314,9 @@ defined('BASEPATH') OR exit('No direct script access allowed');
                                 <?php else: ?>
                                     Total <strong><?php echo $total_barang; ?></strong> barang
                                 <?php endif; ?>
+                                <?php if($show_nonaktif): ?>
+                                    <span class="badge bg-warning ms-2">Termasuk Nonaktif</span>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -291,7 +325,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
                                 <ul class="pagination pagination-sm justify-content-end mb-0">
                                     <?php if(isset($current_page) && $current_page > 1): ?>
                                         <li class="page-item">
-                                            <a class="page-link" href="<?php echo site_url('gudang/barang?page='.($current_page-1).'&search='.urlencode($search).'&filter='.$filter); ?>" tabindex="-1">
+                                            <a class="page-link" href="<?php echo site_url('gudang/barang?page='.($current_page-1).'&search='.urlencode($search).'&filter='.$filter.'&show_nonaktif='.($show_nonaktif?'true':'false')); ?>" tabindex="-1">
                                                 Previous
                                             </a>
                                         </li>
@@ -307,7 +341,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
                                     
                                     if($start_page > 1): ?>
                                         <li class="page-item">
-                                            <a class="page-link" href="<?php echo site_url('gudang/barang?page=1&search='.urlencode($search).'&filter='.$filter); ?>">1</a>
+                                            <a class="page-link" href="<?php echo site_url('gudang/barang?page=1&search='.urlencode($search).'&filter='.$filter.'&show_nonaktif='.($show_nonaktif?'true':'false')); ?>">1</a>
                                         </li>
                                         <?php if($start_page > 2): ?>
                                             <li class="page-item disabled">
@@ -318,7 +352,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
                                     
                                     <?php for($i = $start_page; $i <= $end_page; $i++): ?>
                                         <li class="page-item <?php echo ($i == $current_page) ? 'active' : ''; ?>">
-                                            <a class="page-link" href="<?php echo site_url('gudang/barang?page='.$i.'&search='.urlencode($search).'&filter='.$filter); ?>">
+                                            <a class="page-link" href="<?php echo site_url('gudang/barang?page='.$i.'&search='.urlencode($search).'&filter='.$filter.'&show_nonaktif='.($show_nonaktif?'true':'false')); ?>">
                                                 <?php echo $i; ?>
                                             </a>
                                         </li>
@@ -331,7 +365,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
                                             </li>
                                         <?php endif; ?>
                                         <li class="page-item">
-                                            <a class="page-link" href="<?php echo site_url('gudang/barang?page='.$total_pages.'&search='.urlencode($search).'&filter='.$filter); ?>">
+                                            <a class="page-link" href="<?php echo site_url('gudang/barang?page='.$total_pages.'&search='.urlencode($search).'&filter='.$filter.'&show_nonaktif='.($show_nonaktif?'true':'false')); ?>">
                                                 <?php echo $total_pages; ?>
                                             </a>
                                         </li>
@@ -339,7 +373,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
                                     
                                     <?php if(isset($current_page) && $current_page < $total_pages): ?>
                                         <li class="page-item">
-                                            <a class="page-link" href="<?php echo site_url('gudang/barang?page='.($current_page+1).'&search='.urlencode($search).'&filter='.$filter); ?>">
+                                            <a class="page-link" href="<?php echo site_url('gudang/barang?page='.($current_page+1).'&search='.urlencode($search).'&filter='.$filter.'&show_nonaktif='.($show_nonaktif?'true':'false')); ?>">
                                                 Next
                                             </a>
                                         </li>
@@ -671,16 +705,41 @@ defined('BASEPATH') OR exit('No direct script access allowed');
             </div>
             <div class="modal-body">
                 <p>Apakah Anda yakin ingin menghapus barang <strong id="namaBarangHapus"></strong>?</p>
-                <p class="text-danger"><small>Tindakan ini akan mengubah status barang menjadi nonaktif!</small></p>
-                <div class="alert alert-warning mt-3">
-                    <i class="fas fa-exclamation-circle me-2"></i>
-                    Barang tidak akan benar-benar dihapus dari database, hanya statusnya yang akan diubah menjadi nonaktif.
+                <div id="hapusTypeInfo">
+                    <!-- Content akan diisi via JavaScript berdasarkan status barang -->
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
                 <button type="button" class="btn btn-danger" id="btnHapusBarang">
                     <i class="fas fa-trash me-2"></i>Hapus Barang
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Konfirmasi Aktifkan -->
+<div class="modal fade" id="konfirmasiAktifkanModal" tabindex="-1" aria-labelledby="konfirmasiAktifkanModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="konfirmasiAktifkanModalLabel">
+                    <i class="fas fa-check-circle me-2"></i>Konfirmasi Aktifkan Barang
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Apakah Anda yakin ingin mengaktifkan kembali barang <strong id="namaBarangAktifkan"></strong>?</p>
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Barang akan kembali aktif dan dapat digunakan dalam transaksi.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-success" id="btnAktifkanBarang">
+                    <i class="fas fa-check me-2"></i>Aktifkan Barang
                 </button>
             </div>
         </div>
@@ -1359,6 +1418,15 @@ defined('BASEPATH') OR exit('No direct script access allowed');
     border-radius: 3px;
 }
 
+/* Style untuk barang nonaktif */
+tr.table-warning {
+    background-color: rgba(255, 193, 7, 0.05) !important;
+}
+
+tr.table-warning:hover {
+    background-color: rgba(255, 193, 7, 0.1) !important;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .detail-card {
@@ -1411,6 +1479,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 <script>
 const baseUrl = '<?php echo site_url(); ?>';
 let currentBarangToDelete = null;
+let currentBarangToAktifkan = null;
 
 // Helper function untuk escape HTML
 function escapeHtml(text) {
@@ -1469,19 +1538,28 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             const filter = this.getAttribute('data-filter');
             const search = document.getElementById('searchInput').value;
-            window.location.href = baseUrl + '/gudang/barang?filter=' + filter + '&search=' + encodeURIComponent(search);
+            const showNonaktif = <?php echo $show_nonaktif ? 'true' : 'false'; ?>;
+            window.location.href = baseUrl + '/gudang/barang?filter=' + filter + '&search=' + encodeURIComponent(search) + '&show_nonaktif=' + showNonaktif;
         });
     });
 
     // Export functionality
     document.getElementById('exportBtn').addEventListener('click', function() {
-        window.location.href = baseUrl + '/gudang/export_barang';
+        const showNonaktif = <?php echo $show_nonaktif ? 'true' : 'false'; ?>;
+        window.location.href = baseUrl + '/gudang/export_barang?show_nonaktif=' + showNonaktif;
     });
 
     // Delete button handler
     document.getElementById('btnHapusBarang').addEventListener('click', function() {
         if (currentBarangToDelete) {
-            hapusBarang(currentBarangToDelete.kode, currentBarangToDelete.nama);
+            hapusBarang(currentBarangToDelete.kode, currentBarangToDelete.nama, currentBarangToDelete.status);
+        }
+    });
+
+    // Aktifkan button handler
+    document.getElementById('btnAktifkanBarang').addEventListener('click', function() {
+        if (currentBarangToAktifkan) {
+            aktifkanBarang(currentBarangToAktifkan.kode, currentBarangToAktifkan.nama);
         }
     });
 
@@ -1506,6 +1584,15 @@ function setupEventListeners() {
         btn.addEventListener('click', function() {
             const kodeBarang = this.getAttribute('data-kode');
             editBarang(kodeBarang);
+        });
+    });
+
+    // Aktifkan button
+    document.querySelectorAll('.aktifkan-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const kodeBarang = this.getAttribute('data-kode');
+            const namaBarang = this.closest('tr').querySelector('.fw-bold').textContent;
+            konfirmasiAktifkan(kodeBarang, namaBarang);
         });
     });
 
@@ -1566,7 +1653,8 @@ function setupEventListeners() {
             e.preventDefault();
             const kodeBarang = this.getAttribute('data-kode');
             const namaBarang = this.getAttribute('data-nama');
-            konfirmasiHapus(kodeBarang, namaBarang);
+            const status = this.closest('tr').getAttribute('data-status');
+            konfirmasiHapus(kodeBarang, namaBarang, status);
         });
     });
 }
@@ -1575,29 +1663,44 @@ function performSearch() {
     const searchTerm = document.getElementById('searchInput').value.trim();
     const urlParams = new URLSearchParams(window.location.search);
     const filter = urlParams.get('filter') || 'all';
-    window.location.href = baseUrl + '/gudang/barang?search=' + encodeURIComponent(searchTerm) + '&filter=' + filter;
+    const showNonaktif = <?php echo $show_nonaktif ? 'true' : 'false'; ?>;
+    window.location.href = baseUrl + '/gudang/barang?search=' + encodeURIComponent(searchTerm) + '&filter=' + filter + '&show_nonaktif=' + showNonaktif;
 }
 
 function applyFilter(filter) {
     const rows = document.querySelectorAll('#barangTable tbody tr');
+    const showNonaktif = <?php echo $show_nonaktif ? 'true' : 'false'; ?>;
     
     rows.forEach(row => {
         const kategori = row.getAttribute('data-kategori');
         const stok = parseInt(row.getAttribute('data-stok') || 0);
         const stokMin = parseInt(row.getAttribute('data-stok-min') || 0);
+        const status = row.getAttribute('data-status') || 'aktif';
         
         switch(filter) {
             case 'all':
-                row.style.display = '';
+                if (!showNonaktif) {
+                    // Jika tidak menampilkan nonaktif, sembunyikan barang nonaktif
+                    row.style.display = status === 'nonaktif' ? 'none' : '';
+                } else {
+                    // Jika menampilkan nonaktif, tampilkan semua
+                    row.style.display = '';
+                }
                 break;
             case 'tube':
-                row.style.display = kategori === 'Tube' ? '' : 'none';
+                row.style.display = (kategori === 'Tube') ? '' : 'none';
                 break;
             case 'tire':
-                row.style.display = kategori === 'Tire' ? '' : 'none';
+                row.style.display = (kategori === 'Tire') ? '' : 'none';
                 break;
             case 'stok-minimum':
                 row.style.display = stok <= stokMin ? '' : 'none';
+                break;
+            case 'aktif':
+                row.style.display = status === 'aktif' ? '' : 'none';
+                break;
+            case 'nonaktif':
+                row.style.display = status === 'nonaktif' ? '' : 'none';
                 break;
         }
     });
@@ -1729,6 +1832,7 @@ function renderDetailModal(data) {
             </div>
         </div>
         
+        ${data.status === 'aktif' ? `
         <div class="detail-card detail-card-success">
             <div class="detail-card-header">
                 <h5 class="detail-card-title">
@@ -1770,6 +1874,7 @@ function renderDetailModal(data) {
                 </div>
             </div>
         </div>
+        ` : ''}
         
         <div class="timestamp-card">
             <div class="row">
@@ -1795,6 +1900,11 @@ function renderDetailModal(data) {
             <button type="button" class="btn btn-kenda" onclick="editBarang('${escapeHtml(data.kode_barang || '')}')" data-bs-dismiss="modal">
                 <i class="fas fa-edit me-2"></i>Edit Barang
             </button>
+            ${data.status === 'nonaktif' ? `
+            <button type="button" class="btn btn-success" onclick="konfirmasiAktifkan('${escapeHtml(data.kode_barang || '')}', '${escapeHtml(data.nama_barang || '')}')" data-bs-dismiss="modal">
+                <i class="fas fa-check me-2"></i>Aktifkan Barang
+            </button>
+            ` : ''}
         </div>
     `;
     
@@ -1898,23 +2008,66 @@ function editBarang(kodeBarang) {
         });
 }
 
-function konfirmasiHapus(kodeBarang, nama) {
-    currentBarangToDelete = { kode: kodeBarang, nama: nama };
+function konfirmasiHapus(kodeBarang, nama, status) {
+    currentBarangToDelete = { kode: kodeBarang, nama: nama, status: status };
     document.getElementById('namaBarangHapus').textContent = nama;
+    
+    // Set info berdasarkan status barang
+    const hapusTypeInfo = document.getElementById('hapusTypeInfo');
+    if (status === 'aktif') {
+        hapusTypeInfo.innerHTML = `
+            <p class="text-danger"><small>Tindakan ini akan mengubah status barang menjadi nonaktif!</small></p>
+            <div class="alert alert-warning mt-3">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                Barang tidak akan benar-benar dihapus dari database, hanya statusnya yang akan diubah menjadi nonaktif.
+            </div>
+        `;
+    } else {
+        hapusTypeInfo.innerHTML = `
+            <p class="text-danger"><small><strong>PERHATIAN:</strong> Tindakan ini akan menghapus barang secara permanen dari database!</small></p>
+            <div class="alert alert-danger mt-3">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Barang akan dihapus secara permanen dan tidak dapat dikembalikan!
+            </div>
+        `;
+    }
     
     const konfirmasiModal = new bootstrap.Modal(document.getElementById('konfirmasiHapusModal'));
     konfirmasiModal.show();
 }
 
-function hapusBarang(kodeBarang, nama) {
-    fetch(baseUrl + '/gudang/hapus_barang/' + encodeURIComponent(kodeBarang), {
-        method: 'POST',
+function konfirmasiAktifkan(kodeBarang, nama) {
+    currentBarangToAktifkan = { kode: kodeBarang, nama: nama };
+    document.getElementById('namaBarangAktifkan').textContent = nama;
+    
+    const konfirmasiModal = new bootstrap.Modal(document.getElementById('konfirmasiAktifkanModal'));
+    konfirmasiModal.show();
+}
+
+function hapusBarang(kodeBarang, nama, status) {
+    let url, method;
+    
+    if (status === 'aktif') {
+        // Soft delete (ubah status menjadi nonaktif)
+        url = baseUrl + '/gudang/hapus_barang/' + encodeURIComponent(kodeBarang);
+        method = 'POST';
+    } else {
+        // Hard delete (hapus permanen)
+        url = baseUrl + '/gudang/hapus_permanen_barang/' + encodeURIComponent(kodeBarang);
+        method = 'DELETE';
+    }
+    
+    showLoading(status === 'aktif' ? 'Menghapus barang...' : 'Menghapus barang permanen...');
+    
+    fetch(url, {
+        method: method,
         headers: {
             'Content-Type': 'application/json',
         }
     })
     .then(response => response.json())
     .then(data => {
+        hideLoading();
         if (data.success) {
             showSuccess(data.message);
             const konfirmasiModal = bootstrap.Modal.getInstance(document.getElementById('konfirmasiHapusModal'));
@@ -1925,8 +2078,37 @@ function hapusBarang(kodeBarang, nama) {
         }
     })
     .catch(error => {
+        hideLoading();
         console.error('Error:', error);
         showError('Terjadi kesalahan saat menghapus barang');
+    });
+}
+
+function aktifkanBarang(kodeBarang, nama) {
+    showLoading('Mengaktifkan barang...');
+    
+    fetch(baseUrl + '/gudang/aktifkan_barang/' + encodeURIComponent(kodeBarang), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        if (data.success) {
+            showSuccess(data.message);
+            const konfirmasiModal = bootstrap.Modal.getInstance(document.getElementById('konfirmasiAktifkanModal'));
+            konfirmasiModal.hide();
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showError(data.message);
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        console.error('Error:', error);
+        showError('Terjadi kesalahan saat mengaktifkan barang');
     });
 }
 

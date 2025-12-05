@@ -3,227 +3,226 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Kategori extends CI_Controller {
     
-    public function __construct()
-    {
+    public function __construct() {
         parent::__construct();
-        // Load model
-        // $this->load->model('Kategori_model');
+        $this->load->model('Kategori_model');
+        $this->load->library('session');
+        $this->load->helper('url');
+        $this->load->library('form_validation');
         
-        // Check login
-        if(!$this->session->userdata('username')) {
+        // Cek session login
+        if (!$this->session->userdata('logged_in')) {
             redirect('auth/login');
         }
     }
-    
-    public function index()
-    {
+
+    // Kategori Barang
+    public function index() {
+        $page = $this->input->get('page') ?: 1;
+        $limit = $this->input->get('limit') ?: 10;
+        $status = $this->input->get('status') ?: 'all';
+        $search = $this->input->get('search') ?: '';
+        
+        $offset = ($page - 1) * $limit;
+        
+        $params = [
+            'status' => $status,
+            'limit' => $limit,
+            'offset' => $offset,
+            'search' => $search
+        ];
+        
+        $kategori_list = $this->Kategori_model->get_kategori_list($params);
+        $total_kategori = $this->Kategori_model->count_kategori($status, $search);
+        $total_pages = ceil($total_kategori / $limit);
+        
         $data = array(
             'title' => 'Kategori Barang - KENDA',
             'username' => $this->session->userdata('username'),
             'active_menu' => 'kategori',
-            'content' => 'kategori/index'
+            'content' => 'kategori/index',
+            'kategori_list' => $kategori_list,
+            'statistics' => $this->Kategori_model->get_kategori_statistics(),
+            'current_page' => (int)$page,
+            'total_pages' => $total_pages,
+            'total_kategori' => $total_kategori,
+            'limit' => $limit,
+            'status_filter' => $status,
+            'search' => $search
         );
         
         $this->load->view('template', $data);
     }
 
-    // API untuk mendapatkan data kategori
-    public function get_kategori()
-    {
-        $this->output->set_content_type('application/json');
-        
-        // Sample data - dalam implementasi real, ambil dari database
-        $kategori_list = [
-            [
-                'id' => 1,
-                'kode_kategori' => 'TUB',
-                'nama_kategori' => 'Tube',
-                'deskripsi' => 'Kategori untuk berbagai jenis tube ban',
-                'jumlah_barang' => 856,
-                'status' => 'active',
-                'created_at' => '2024-01-15 10:30:00'
-            ],
-            [
-                'id' => 2,
-                'kode_kategori' => 'TIR',
-                'nama_kategori' => 'Tire',
-                'deskripsi' => 'Kategori untuk berbagai jenis tire/ban',
-                'jumlah_barang' => 392,
-                'status' => 'active',
-                'created_at' => '2024-01-15 10:30:00'
-            ],
-            [
-                'id' => 3,
-                'kode_kategori' => 'ACC',
-                'nama_kategori' => 'Accessories',
-                'deskripsi' => 'Kategori untuk aksesoris kendaraan',
-                'jumlah_barang' => 125,
-                'status' => 'active',
-                'created_at' => '2024-02-10 14:20:00'
-            ],
-            [
-                'id' => 4,
-                'kode_kategori' => 'SPR',
-                'nama_kategori' => 'Spare Part',
-                'deskripsi' => 'Kategori untuk spare part kendaraan',
-                'jumlah_barang' => 89,
-                'status' => 'inactive',
-                'created_at' => '2024-02-20 09:15:00'
-            ]
-        ];
+    // ==================== KATEGORI API METHODS ====================
 
-        $this->output->set_output(json_encode([
-            'success' => true,
-            'data' => $kategori_list,
-            'total' => count($kategori_list)
-        ]));
-    }
-
-    // Simpan kategori baru
-    public function simpan()
-    {
-        $this->output->set_content_type('application/json');
-        
-        // Get POST data
-        $kode_kategori = $this->input->post('kode_kategori');
-        $nama_kategori = $this->input->post('nama_kategori');
-        $deskripsi = $this->input->post('deskripsi');
-        $status = $this->input->post('status');
-        
-        // Validasi input
-        if (empty($kode_kategori) || empty($nama_kategori)) {
-            $this->output->set_output(json_encode([
-                'success' => false,
-                'message' => 'Kode dan Nama Kategori harus diisi'
-            ]));
-            return;
+    public function api_list_kategori() {
+        try {
+            // Get parameters from request
+            $page = $this->input->get('page') ? intval($this->input->get('page')) : 1;
+            $limit = $this->input->get('limit') ? intval($this->input->get('limit')) : 10;
+            $status = $this->input->get('status') ? $this->input->get('status') : 'all';
+            $search = $this->input->get('search') ?: '';
+            
+            // Validate parameters
+            $page = max(1, $page);
+            $limit = max(1, min(100, $limit)); // Limit max 100 items per page
+            $offset = ($page - 1) * $limit;
+            
+            // Get total count with filter
+            $total_items = $this->Kategori_model->count_kategori($status, $search);
+            
+            // Get paginated data
+            $params = [
+                'status' => $status,
+                'limit' => $limit,
+                'offset' => $offset,
+                'search' => $search
+            ];
+            $data = $this->Kategori_model->get_kategori_list($params);
+            
+            // Calculate pagination info
+            $total_pages = ceil($total_items / $limit);
+            
+            // Prepare response
+            $response = [
+                'success' => true,
+                'data' => $data,
+                'total_items' => $total_items,
+                'total_pages' => $total_pages,
+                'current_page' => $page,
+                'limit' => $limit,
+                'status_filter' => $status,
+                'search' => $search
+            ];
+            
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode($response));
+                
+        } catch (Exception $e) {
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                ]));
         }
-        
-        // Check if kode kategori already exists (dalam implementasi real)
-        // $existing = $this->Kategori_model->check_kode_exists($kode_kategori);
-        
-        // Simpan ke database (dalam implementasi real)
-        // $kategori_id = $this->Kategori_model->simpan_kategori($data);
-        
-        // Simulasi penyimpanan berhasil
-        $kategori_id = rand(100, 999);
-        
-        $this->output->set_output(json_encode([
-            'success' => true,
-            'message' => 'Kategori berhasil disimpan',
-            'data' => [
-                'id' => $kategori_id,
-                'kode_kategori' => $kode_kategori,
-                'nama_kategori' => $nama_kategori
-            ]
-        ]));
     }
 
-    // Update kategori
-    public function update()
-    {
-        $this->output->set_content_type('application/json');
+    public function api_kategori_statistics() {
+        $statistics = $this->Kategori_model->get_kategori_statistics();
         
-        $id = $this->input->post('id');
-        $kode_kategori = $this->input->post('kode_kategori');
-        $nama_kategori = $this->input->post('nama_kategori');
-        $deskripsi = $this->input->post('deskripsi');
-        $status = $this->input->post('status');
-        
-        // Validasi
-        if (empty($id) || empty($kode_kategori) || empty($nama_kategori)) {
-            $this->output->set_output(json_encode([
-                'success' => false,
-                'message' => 'ID, Kode, dan Nama Kategori harus diisi'
-            ]));
-            return;
-        }
-        
-        // Update di database (dalam implementasi real)
-        // $this->Kategori_model->update_kategori($id, $data);
-        
-        $this->output->set_output(json_encode([
-            'success' => true,
-            'message' => 'Kategori berhasil diupdate',
-            'data' => [
-                'id' => $id,
-                'kode_kategori' => $kode_kategori,
-                'nama_kategori' => $nama_kategori
-            ]
-        ]));
-    }
-
-    // Hapus kategori
-    public function hapus($id)
-    {
-        $this->output->set_content_type('application/json');
-        
-        // Validasi
-        if (empty($id)) {
-            $this->output->set_output(json_encode([
-                'success' => false,
-                'message' => 'ID kategori tidak valid'
-            ]));
-            return;
-        }
-        
-        // Check if kategori has barang (dalam implementasi real)
-        // $has_barang = $this->Kategori_model->check_has_barang($id);
-        
-        // Hapus dari database (dalam implementasi real)
-        // $this->Kategori_model->hapus_kategori($id);
-        
-        $this->output->set_output(json_encode([
-            'success' => true,
-            'message' => 'Kategori berhasil dihapus'
-        ]));
-    }
-
-    // Get detail kategori
-    public function detail($id)
-    {
-        $this->output->set_content_type('application/json');
-        
-        // Sample data - dalam implementasi real, ambil dari database
-        $kategori_data = [
-            'id' => $id,
-            'kode_kategori' => 'TUB',
-            'nama_kategori' => 'Tube',
-            'deskripsi' => 'Kategori untuk berbagai jenis tube ban',
-            'status' => 'active',
-            'created_at' => '2024-01-15 10:30:00',
-            'updated_at' => '2024-03-20 14:25:00',
-            'jumlah_barang' => 856,
-            'barang_terbaru' => [
-                ['kode' => 'TUB001', 'nama' => 'Tube Standard 17"'],
-                ['kode' => 'TUB002', 'nama' => 'Tube Heavy Duty 19"'],
-                ['kode' => 'TUB003', 'nama' => 'Tube Racing 15"']
-            ]
-        ];
-        
-        $this->output->set_output(json_encode([
-            'success' => true,
-            'data' => $kategori_data
-        ]));
-    }
-
-    // Get statistics
-    public function get_statistics()
-    {
-        $this->output->set_content_type('application/json');
-        
-        // Sample statistics - dalam implementasi real, hitung dari database
-        $statistics = [
-            'total_kategori' => 4,
-            'active_kategori' => 3,
-            'inactive_kategori' => 1,
-            'total_barang' => 1462,
-            'kategori_terbanyak' => 'Tube (856 barang)'
-        ];
-        
-        $this->output->set_output(json_encode([
+        $response = [
             'success' => true,
             'data' => $statistics
-        ]));
+        ];
+
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode($response));
+    }
+
+    public function api_detail_kategori($id) {
+        $kategori = $this->Kategori_model->get_kategori_detail($id);
+        
+        if ($kategori) {
+            $response = [
+                'success' => true,
+                'data' => $kategori
+            ];
+        } else {
+            $response = [
+                'success' => false,
+                'message' => 'Kategori tidak ditemukan'
+            ];
+        }
+
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode($response));
+    }
+
+    public function simpan_kategori() {
+        $post_data = $this->input->post();
+
+        $data = [
+            'kode_kategori' => $post_data['kode_kategori'],
+            'nama_kategori' => $post_data['nama_kategori'],
+            'deskripsi' => $post_data['deskripsi'],
+            'status' => $post_data['status'],
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+
+        $result = $this->Kategori_model->save_kategori($data);
+
+        if ($result) {
+            $response = [
+                'success' => true,
+                'message' => 'Kategori berhasil disimpan'
+            ];
+        } else {
+            $response = [
+                'success' => false,
+                'message' => 'Gagal menyimpan kategori'
+            ];
+        }
+
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode($response));
+    }
+
+    public function update_kategori() {
+        $post_data = $this->input->post();
+
+        $data = [
+            'kode_kategori' => $post_data['kode_kategori'],
+            'nama_kategori' => $post_data['nama_kategori'],
+            'deskripsi' => $post_data['deskripsi'],
+            'status' => $post_data['status'],
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+
+        $id = $post_data['id'];
+
+        $result = $this->Kategori_model->update_kategori($id, $data);
+
+        if ($result) {
+            $response = [
+                'success' => true,
+                'message' => 'Kategori berhasil diupdate'
+            ];
+        } else {
+            $response = [
+                'success' => false,
+                'message' => 'Gagal mengupdate kategori'
+            ];
+        }
+
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode($response));
+    }
+
+    public function hapus_kategori($id) {
+        $result = $this->Kategori_model->delete_kategori($id);
+
+        if ($result) {
+            $response = [
+                'success' => true,
+                'message' => 'Kategori berhasil dihapus'
+            ];
+        } else {
+            $response = [
+                'success' => false,
+                'message' => 'Gagal menghapus kategori'
+            ];
+        }
+
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode($response));
     }
 }

@@ -284,7 +284,7 @@
                     </div>
                 <?php endif; ?>
                 
-                <form method="POST" action="<?php echo site_url('auth/login'); ?>">
+                <form method="POST" action="<?php echo site_url('auth/process-login'); ?>">
                     <div class="mb-3">
                         <label for="username" class="form-label fw-bold">Username</label>
                         <div class="input-group">

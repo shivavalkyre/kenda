@@ -19,24 +19,15 @@ class Barang extends CI_Controller {
         $offset = ($page - 1) * $limit;
         $search = $this->input->get('search') ?: '';
         $filter = $this->input->get('filter') ?: 'all';
-        $show_nonaktif = $this->input->get('show_nonaktif') ?: false;
         
-        if ($show_nonaktif) {
-            // Gunakan method yang menampilkan semua barang termasuk nonaktif
-            $total_barang = $this->Barang_model->get_total_barang_all();
-            $barang_list = $this->Barang_model->get_barang_paginated_all($limit, $offset, $search, $filter);
-            $total_filtered = $this->Barang_model->count_barang_all($search, $filter);
-        } else {
-            // Gunakan method lama yang hanya menampilkan barang aktif
-            $total_barang = $this->Barang_model->get_total_barang();
-            $barang_list = $this->Barang_model->get_barang_paginated($limit, $offset, $search, $filter);
-            $total_filtered = $this->Barang_model->count_barang($search, $filter);
-        }
-        
+        $total_barang = $this->Barang_model->get_total_barang();
         $total_tube = $this->Barang_model->get_total_by_kategori('Tube');
         $total_tire = $this->Barang_model->get_total_by_kategori('Tire');
         $stok_minimum = $this->Barang_model->get_stok_minimum_count();
         
+        // Get barang list with pagination
+        $barang_list = $this->Barang_model->get_barang_paginated($limit, $offset, $search, $filter);
+        $total_filtered = $this->Barang_model->count_barang($search, $filter);
         $total_pages = ceil($total_filtered / $limit);
         
         $data = array(
@@ -54,7 +45,6 @@ class Barang extends CI_Controller {
             'total_filtered' => $total_filtered,
             'search' => $search,
             'filter' => $filter,
-            'show_nonaktif' => $show_nonaktif,
             'limit' => $limit
         );
         
@@ -235,41 +225,6 @@ class Barang extends CI_Controller {
             ->set_content_type('application/json')
             ->set_output(json_encode($response));
     }
-
-	public function hapus_permanen_barang($kode_barang) {
-		if (empty($kode_barang)) {
-			$response = [
-				'success' => false,
-				'message' => 'Kode barang tidak valid'
-			];
-		} else {
-			// Hapus permanen dari database
-			$this->db->where('kode_barang', $kode_barang);
-			$result = $this->db->delete('barang');
-			
-			// Juga hapus log stok terkait
-			if ($result) {
-				$this->db->where('kode_barang', $kode_barang);
-				$this->db->delete('log_stok');
-			}
-			
-			if ($result) {
-				$response = [
-					'success' => true,
-					'message' => 'Barang berhasil dihapus permanen'
-				];
-			} else {
-				$response = [
-					'success' => false,
-					'message' => 'Gagal menghapus barang permanen'
-				];
-			}
-		}
-		
-		$this->output
-			->set_content_type('application/json')
-			->set_output(json_encode($response));
-	}
 
     /**
      * API untuk Input Stok Awal
@@ -517,65 +472,27 @@ class Barang extends CI_Controller {
     /**
      * Export Data Barang
      */
-	public function export_barang() {
-		$this->load->helper('download');
-		
-		$show_nonaktif = $this->input->get('show_nonaktif') == 'true';
-		
-		$this->load->model('Barang_model');
-		$data = $this->Barang_model->get_barang_export_data($show_nonaktif);
-		
-		if (empty($data)) {
-			$this->session->set_flashdata('warning', 'Tidak ada data barang untuk di-export');
-			redirect('gudang/barang');
-		}
-		
-		// Buat header CSV dengan format yang benar
-		$headers = [
-			'Kode Barang',
-			'Nama Barang', 
-			'Kategori',
-			'Stok',
-			'Satuan',
-			'Stok Minimum',
-			'Status',
-			'Deskripsi'
-		];
-		
-		$csv = implode(',', $headers) . "\n";
-		
-		foreach ($data as $row) {
-			// Escape semua field
-			$escaped_row = array_map(function($value) {
-				// Convert null to empty string
-				if ($value === null) return '';
-				// Escape double quotes
-				$value = str_replace('"', '""', $value);
-				// Wrap in quotes if contains comma, newline, or double quotes
-				if (strpos($value, ',') !== false || strpos($value, "\n") !== false || strpos($value, '"') !== false) {
-					return '"' . $value . '"';
-				}
-				return $value;
-			}, [
-				$row['kode_barang'] ?? '',
-				$row['nama_barang'] ?? '',
-				$row['kategori'] ?? '',
-				$row['stok'] ?? 0,
-				$row['satuan'] ?? 'PCS',
-				$row['stok_minimum'] ?? 0,
-				$row['status'] ?? 'aktif',
-				$row['deskripsi'] ?? ''
-			]);
-			
-			$csv .= implode(',', $escaped_row) . "\n";
-		}
-		
-		// Tambah BOM untuk UTF-8
-		$csv = "\xEF\xBB\xBF" . $csv;
-		
-		$filename = 'data_barang_' . date('Y-m-d_H-i') . '.csv';
-		force_download($filename, $csv);
-	}
+    public function export_barang() {
+        $this->load->helper('download');
+        
+        $data = $this->Barang_model->get_barang_for_export();
+        
+        $csv = "Kode Barang,Nama Barang,Kategori,Stok,Satuan,Stok Minimum,Status,Deskripsi\n";
+        
+        foreach ($data as $barang) {
+            $csv .= '"' . $barang['kode_barang'] . '","' 
+                    . $barang['nama_barang'] . '","' 
+                    . $barang['kategori'] . '","' 
+                    . $barang['stok'] . '","' 
+                    . $barang['satuan'] . '","' 
+                    . $barang['stok_minimum'] . '","' 
+                    . $barang['status'] . '","' 
+                    . str_replace('"', '""', $barang['deskripsi'] ?? '') . '"' . "\n";
+        }
+        
+        $filename = 'data_barang_' . date('Y-m-d') . '.csv';
+        force_download($filename, $csv);
+    }
 
     /**
      * API untuk Get Barang Statistics
@@ -601,17 +518,11 @@ class Barang extends CI_Controller {
         $limit = $this->input->get('limit') ?: 10;
         $search = $this->input->get('search') ?: '';
         $filter = $this->input->get('filter') ?: 'all';
-        $show_nonaktif = $this->input->get('show_nonaktif') ?: false;
         
         $offset = ($page - 1) * $limit;
         
-        if ($show_nonaktif) {
-            $result = $this->Barang_model->get_barang_paginated_all($limit, $offset, $search, $filter);
-            $total = $this->Barang_model->count_barang_all($search, $filter);
-        } else {
-            $result = $this->Barang_model->get_barang_paginated($limit, $offset, $search, $filter);
-            $total = $this->Barang_model->count_barang($search, $filter);
-        }
+        $result = $this->Barang_model->get_barang_paginated($limit, $offset, $search, $filter);
+        $total = $this->Barang_model->count_barang($search, $filter);
         
         $response = [
             'success' => true,
@@ -628,4 +539,33 @@ class Barang extends CI_Controller {
             ->set_content_type('application/json')
             ->set_output(json_encode($response));
     }
+
+    /**
+     * API untuk Get Barang untuk Packing List
+     */
+    public function api_barang_for_packing() {
+        $barang_list = $this->Barang_model->get_barang_for_dropdown();
+        
+        $formatted_data = [];
+        foreach ($barang_list as $barang) {
+            $formatted_data[] = [
+                'id' => $barang['kode_barang'],
+                'kode' => $barang['kode_barang'],
+                'nama' => $barang['nama_barang'],
+                'kategori' => $barang['kategori'],
+                'stok' => $barang['stok'],
+                'satuan' => $barang['satuan']
+            ];
+        }
+        
+        $response = [
+            'success' => true,
+            'data' => $formatted_data
+        ];
+
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode($response));
+    }
 }
+?>

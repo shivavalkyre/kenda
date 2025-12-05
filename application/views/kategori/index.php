@@ -295,7 +295,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
     </div>
 </div>
 
-<!-- Modal Detail Kategori - DIUBAH MENJADI SEPERTI BARANG -->
+<!-- Modal Detail Kategori -->
 <div class="modal fade" id="detailKategoriModal" tabindex="-1" aria-labelledby="detailKategoriModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
@@ -445,8 +445,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
     color: #856404;
 }
 
-/* STYLE CARD SEPERTI BARANG - TAMBAHAN BARU */
-/* Card di modal detail */
+/* STYLE CARD SEPERTI BARANG */
 .detail-card {
     background: #ffffff;
     border: 1px solid #e0e0e0;
@@ -871,7 +870,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 }
 </style>
 
-<!-- SweetAlert2 JS - MASIH ADA TAPI TIDAK DIGUNAKAN UNTUK LOADING/KONFIRMASI -->
+<!-- SweetAlert2 JS -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
@@ -882,7 +881,7 @@ let limit = 10; // Items per page
 let totalItems = 0;
 let currentStatusFilter = 'all';
 
-// Hanya fungsi escapeHtml yang masih digunakan
+// Fungsi untuk escape HTML
 function escapeHtml(text) {
     if (!text) return '';
     const map = {
@@ -895,6 +894,26 @@ function escapeHtml(text) {
     return text.replace(/[&<>"']/g, function(m) { return map[m]; });
 }
 
+// Format tanggal
+function formatTanggal(tanggal) {
+    if (!tanggal) return '-';
+    
+    const options = { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    };
+    
+    try {
+        return new Date(tanggal).toLocaleDateString('id-ID', options);
+    } catch (e) {
+        return tanggal;
+    }
+}
+
+// Fungsi utama
 document.addEventListener('DOMContentLoaded', function() {
     loadKategoriList(currentPage);
     loadStatistics();
@@ -933,8 +952,21 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// Load data kategori
 function loadKategoriList(page = 1, status = 'all') {
-    fetch(`${baseUrl}/gudang/api_list_kategori?page=${page}&limit=${limit}&status=${status}`)
+    const loadingHTML = `
+        <tr>
+            <td colspan="7" class="text-center py-4">
+                <div class="spinner-border text-kenda-red" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Memuat data kategori...</p>
+            </td>
+        </tr>
+    `;
+    document.getElementById('kategoriTableBody').innerHTML = loadingHTML;
+    
+    fetch(`${baseUrl}/kategori/api/list?page=${page}&limit=${limit}&status=${status}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -948,24 +980,21 @@ function loadKategoriList(page = 1, status = 'all') {
                 
                 renderKategoriTable(kategoriList);
                 renderPagination();
+                updatePaginationInfo();
             } else {
-                // Tampilkan error di console saja
                 console.error('Gagal memuat data kategori:', data.message || '');
-                // Reset data jika gagal
-                totalItems = 0;
-                renderKategoriTable([]);
+                showEmptyTable('Gagal memuat data kategori');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            // Reset data jika error
-            totalItems = 0;
-            renderKategoriTable([]);
+            showEmptyTable('Terjadi kesalahan saat memuat data');
         });
 }
 
+// Load statistics
 function loadStatistics() {
-    fetch(`${baseUrl}/gudang/api_kategori_statistics`)
+    fetch(`${baseUrl}/kategori/api/statistics`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -980,25 +1009,14 @@ function loadStatistics() {
         });
 }
 
+// Render table
 function renderKategoriTable(kategoriList) {
     const tbody = document.getElementById('kategoriTableBody');
     const paginationContainer = document.getElementById('paginationContainer');
     
     // Pastikan kategoriList ada dan array
     if (!kategoriList || !Array.isArray(kategoriList) || kategoriList.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="7" class="text-center py-4">
-                    <div class="text-muted">
-                        <i class="fas fa-tags fa-3x mb-3"></i>
-                        <p>Tidak ada data kategori</p>
-                        <button class="btn btn-kenda" data-bs-toggle="modal" data-bs-target="#tambahKategoriModal">
-                            <i class="fas fa-plus me-2"></i>Tambah Kategori Pertama
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
+        showEmptyTable('Tidak ada data kategori');
         
         if (paginationContainer) {
             paginationContainer.style.display = 'none';
@@ -1012,7 +1030,7 @@ function renderKategoriTable(kategoriList) {
     
     // Tampilkan pagination jika ada data
     if (paginationContainer) {
-        paginationContainer.style.display = 'flex';
+        paginationContainer.style.display = 'block';
     }
     
     // Update totalItems
@@ -1069,9 +1087,6 @@ function renderKategoriTable(kategoriList) {
     
     tbody.innerHTML = html;
     
-    // Update pagination info
-    updatePaginationInfo();
-    
     // Re-initialize tooltips for new elements
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -1079,6 +1094,25 @@ function renderKategoriTable(kategoriList) {
     });
 }
 
+// Tampilkan pesan jika tabel kosong
+function showEmptyTable(message) {
+    const tbody = document.getElementById('kategoriTableBody');
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="7" class="text-center py-4">
+                <div class="text-muted">
+                    <i class="fas fa-tags fa-3x mb-3"></i>
+                    <p>${message}</p>
+                    <button class="btn btn-kenda" data-bs-toggle="modal" data-bs-target="#tambahKategoriModal">
+                        <i class="fas fa-plus me-2"></i>Tambah Kategori Pertama
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `;
+}
+
+// Render pagination
 function renderPagination() {
     const paginationNav = document.getElementById('paginationNav');
     const paginationContainer = document.getElementById('paginationContainer');
@@ -1184,6 +1218,7 @@ function renderPagination() {
     updatePaginationInfo();
 }
 
+// Update pagination info
 function updatePaginationInfo() {
     const startItem = totalItems > 0 ? (currentPage - 1) * limit + 1 : 0;
     const endItem = totalItems > 0 ? Math.min(currentPage * limit, totalItems) : 0;
@@ -1209,6 +1244,7 @@ function updatePaginationInfo() {
     }
 }
 
+// Go to page
 function goToPage(page) {
     if (page < 1 || page > totalPages || page === currentPage) {
         return false;
@@ -1234,6 +1270,7 @@ function goToPage(page) {
     return false;
 }
 
+// Highlight active page
 function highlightActivePage() {
     const pageLinks = document.querySelectorAll('.pagination .page-link');
     pageLinks.forEach(link => {
@@ -1244,6 +1281,7 @@ function highlightActivePage() {
     });
 }
 
+// Simpan kategori
 function simpanKategori() {
     const formData = new FormData(document.getElementById('formTambahKategori'));
     const submitBtn = document.querySelector('#formTambahKategori button[type="submit"]');
@@ -1253,7 +1291,7 @@ function simpanKategori() {
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Menyimpan...';
     
-    fetch(`${baseUrl}/kategori/simpan`, {
+    fetch(`${baseUrl}/kategori/api/simpan`, {
         method: 'POST',
         body: formData
     })
@@ -1271,8 +1309,12 @@ function simpanKategori() {
             // Reload page untuk menampilkan flash message
             window.location.reload();
         } else {
-            // Tampilkan error di console
-            console.error('Error:', data.message);
+            // Tampilkan error
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.message || 'Gagal menyimpan kategori'
+            });
         }
     })
     .catch(error => {
@@ -1280,25 +1322,39 @@ function simpanKategori() {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalText;
         
-        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Terjadi kesalahan saat menyimpan kategori'
+        });
     });
 }
 
+// Edit kategori
 function editKategori(id) {
-    fetch(`${baseUrl}/gudang/api_detail_kategori/${id}`)
+    fetch(`${baseUrl}/kategori/api/detail/${id}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 showEditModal(data.data);
             } else {
-                console.error('Gagal memuat data kategori');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Gagal memuat data kategori'
+                });
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Terjadi kesalahan saat memuat data kategori'
+            });
         });
 }
 
+// Tampilkan modal edit
 function showEditModal(data) {
     document.getElementById('edit_id').value = data.id;
     document.getElementById('edit_kode_kategori').value = data.kode_kategori;
@@ -1312,6 +1368,7 @@ function showEditModal(data) {
     modal.show();
 }
 
+// Update kategori
 function updateKategori() {
     const formData = new FormData(document.getElementById('formEditKategori'));
     const submitBtn = document.querySelector('#formEditKategori button[type="submit"]');
@@ -1321,7 +1378,7 @@ function updateKategori() {
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Mengupdate...';
     
-    fetch(`${baseUrl}/gudang/update_kategori`, {
+    fetch(`${baseUrl}/kategori/api/update`, {
         method: 'POST',
         body: formData
     })
@@ -1339,8 +1396,11 @@ function updateKategori() {
             // Reload page untuk menampilkan flash message
             window.location.reload();
         } else {
-            // Tampilkan error di console
-            console.error('Error:', data.message);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.message || 'Gagal mengupdate kategori'
+            });
         }
     })
     .catch(error => {
@@ -1348,26 +1408,39 @@ function updateKategori() {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalText;
         
-        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Terjadi kesalahan saat mengupdate kategori'
+        });
     });
 }
 
-// FUNGSI DETAIL KATEGORI YANG SUDAH DIUBAH SEPERTI BARANG
+// Detail kategori
 function detailKategori(id) {
-    fetch(`${baseUrl}/gudang/api_detail_kategori/${id}`)
+    fetch(`${baseUrl}/kategori/api/detail/${id}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 showDetailModal(data.data);
             } else {
-                console.error('Gagal memuat detail kategori');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Gagal memuat detail kategori'
+                });
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Terjadi kesalahan saat memuat detail kategori'
+            });
         });
 }
 
+// Tampilkan modal detail
 function showDetailModal(data) {
     // Determine colors and icons based on status
     let statusColor, statusIcon, statusText;
@@ -1388,7 +1461,7 @@ function showDetailModal(data) {
     // Get barang count
     const jumlahBarang = data.jumlah_barang || 0;
     
-    // Create modal content dengan card yang lebih menarik seperti barang
+    // Create modal content
     const detailContent = `
         <div class="detail-card">
             <div class="detail-card-header">
@@ -1451,7 +1524,7 @@ function showDetailModal(data) {
                     <small class="text-muted">Dalam kategori ini</small>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-value count-success">${data.status === 'active' ? 'Aktif' : 'Tidak'}</div>
+                    <div class="stat-value count-success">${data.status === 'active' ? 'Aktif' : 'Tidak Aktif'}</div>
                     <div class="stat-label">Status Kategori</div>
                     <small class="text-muted">Untuk penggunaan</small>
                 </div>
@@ -1543,25 +1616,53 @@ function showDetailModal(data) {
     modal.show();
 }
 
+// Hapus kategori
 function hapusKategori(id, nama) {
-    // Menggunakan konfirmasi browser default
-    if (confirm(`Apakah Anda yakin ingin menghapus kategori "${nama}"?\n\nData yang dihapus tidak dapat dikembalikan.`)) {
-        fetch(`${baseUrl}/gudang/hapus_kategori/${id}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Reload page untuk menampilkan flash message
-                    window.location.reload();
-                } else {
-                    console.error('Error:', data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-    }
+    Swal.fire({
+        title: 'Hapus Kategori?',
+        html: `Apakah Anda yakin ingin menghapus kategori <strong>"${escapeHtml(nama)}"</strong>?<br><br>
+               <small class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i>Data yang dihapus tidak dapat dikembalikan</small>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Ya, Hapus!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`${baseUrl}/kategori/api/hapus/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            title: 'Berhasil!',
+                            text: 'Kategori berhasil dihapus',
+                            icon: 'success',
+                            timer: 1500
+                        }).then(() => {
+                            // Reload page
+                            window.location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: data.message || 'Gagal menghapus kategori'
+                        });
+                    }
+                })
+                .catch(error => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Terjadi kesalahan saat menghapus kategori'
+                    });
+                });
+        }
+    });
 }
 
+// Apply filter
 function applyFilter(status) {
     const rows = document.querySelectorAll('#kategoriTable tbody tr');
     
@@ -1582,27 +1683,23 @@ function applyFilter(status) {
     });
 }
 
+// Refresh data
 function refreshData() {
     loadKategoriList(currentPage, currentStatusFilter);
     loadStatistics();
-}
-
-// Helper function untuk format tanggal
-function formatTanggal(tanggal) {
-    if (!tanggal) return '-';
     
-    const options = { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    };
+    // Show loading toast
+    const toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 1500,
+        timerProgressBar: true
+    });
     
-    try {
-        return new Date(tanggal).toLocaleDateString('id-ID', options);
-    } catch (e) {
-        return tanggal;
-    }
+    toast.fire({
+        icon: 'success',
+        title: 'Data berhasil direfresh'
+    });
 }
 </script>
