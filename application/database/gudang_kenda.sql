@@ -11,7 +11,7 @@
  Target Server Version : 100408 (10.4.8-MariaDB)
  File Encoding         : 65001
 
- Date: 03/12/2025 16:05:33
+ Date: 05/12/2025 16:24:25
 */
 
 SET NAMES utf8mb4;
@@ -33,21 +33,31 @@ CREATE TABLE `barang`  (
   `status` enum('aktif','nonaktif') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'aktif',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp,
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp ON UPDATE CURRENT_TIMESTAMP,
+  `size` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `color` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `net_weight` decimal(10, 3) NULL DEFAULT NULL,
+  `gross_weight` decimal(10, 3) NULL DEFAULT NULL,
+  `no_po` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `item_no` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `kenda_size` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `codigo` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `part_no` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `cfr` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `kode_barang`(`kode_barang` ASC) USING BTREE,
   INDEX `kategori`(`kategori` ASC) USING BTREE,
   INDEX `status`(`status` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of barang
 -- ----------------------------
-INSERT INTO `barang` VALUES (1, 'TUB001', 'Tube Standard 17\"', 'Tube', 350, 50, 'PCS', 'Tube untuk ban 17 inch', 'aktif', '2025-12-01 11:05:19', '2025-12-01 10:00:49');
-INSERT INTO `barang` VALUES (2, 'TIR001', 'Tire Radial 205/55/R16', 'Tire', 150, 21, 'PCS', 'Ban radial ukuran 205/55/R16', 'aktif', '2025-12-01 11:05:19', '2025-12-02 01:43:11');
-INSERT INTO `barang` VALUES (3, 'TUB002', 'Tube Heavy Duty 19\"', 'Tube', 17, 16, 'PCS', 'Tube heavy duty untuk truck', 'aktif', '2025-12-01 11:05:19', '2025-12-02 07:03:51');
-INSERT INTO `barang` VALUES (4, 'TIR002', 'Tire Offroad 265/70/R16', 'Tire', 10, 6, 'PCS', 'Ban offroad ukuran 265/70/R16', 'aktif', '2025-12-01 11:05:19', '2025-12-02 05:46:38');
-INSERT INTO `barang` VALUES (5, 'TUB003', 'Tube Racing 15\"', 'Tube', 45, 10, 'PCS', 'Tube racing untuk mobil sport', 'aktif', '2025-12-01 11:05:19', '2025-12-01 11:05:19');
-INSERT INTO `barang` VALUES (6, 'TUB004', 'Tube Heavy Duty 22\"', 'Tube', 10, 5, 'PCS', 'Testing', 'nonaktif', '2025-12-02 06:17:14', '2025-12-03 04:56:29');
+INSERT INTO `barang` VALUES (1, 'TUB001', 'Tube Standard 17\"', 'Tube', 350, 50, 'PCS', 'Tube untuk ban 17 inch', 'aktif', '2025-12-01 11:05:19', '2025-12-05 11:12:40', '20\" X 1.75', 'BLACK', 15.200, 15.600, '251000528', 'TRERBBKBKK0120175K924', NULL, NULL, NULL, '1.8CFT');
+INSERT INTO `barang` VALUES (2, 'TIR001', 'Tire Radial 205/55/R16', 'Tire', 150, 21, 'PCS', 'Ban radial ukuran 205/55/R16', 'aktif', '2025-12-01 11:05:19', '2025-12-05 11:12:29', '20\" X 1.75', 'BLACK', 15.200, 15.600, '251000528', 'TRERBBKBKK0120175K924', NULL, NULL, NULL, '1.8CFT');
+INSERT INTO `barang` VALUES (3, 'TUB002', 'Tube Heavy Duty 19\"', 'Tube', 17, 16, 'PCS', 'Tube heavy duty untuk truck', 'aktif', '2025-12-01 11:05:19', '2025-12-05 11:12:32', '20\" X 1.75', 'BLACK', 15.200, 15.600, '251000528', 'TRERBBKBKK0120175K924', NULL, NULL, NULL, '1.8CFT');
+INSERT INTO `barang` VALUES (4, 'TIR002', 'Tire Offroad 265/70/R16', 'Tire', 10, 6, 'PCS', 'Ban offroad ukuran 265/70/R16', 'aktif', '2025-12-01 11:05:19', '2025-12-05 14:40:07', '20\" X 1.75', 'BLACK', 15.200, 15.600, '251000528', 'TRERBBKBKK0120175K924', NULL, NULL, NULL, '1.8CFT');
+INSERT INTO `barang` VALUES (5, 'TUB003', 'Tube Racing 15\"', 'Tube', 45, 10, 'PCS', 'Tube racing untuk mobil sport', 'aktif', '2025-12-01 11:05:19', '2025-12-05 11:12:37', '20\" X 1.75', 'BLACK', 15.200, 15.600, '251000528', 'TRERBBKBKK0120175K924', NULL, NULL, NULL, '1.8CFT');
+INSERT INTO `barang` VALUES (8, 'TIR003', 'Tire 22\"', 'Tire', 1, 5, 'PCS', '', 'aktif', '2025-12-05 16:02:38', '2025-12-05 16:03:02', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- ----------------------------
 -- Table structure for kategori
@@ -63,7 +73,7 @@ CREATE TABLE `kategori`  (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `kode_kategori`(`kode_kategori` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 14 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of kategori
@@ -78,14 +88,14 @@ DROP TABLE IF EXISTS `label_scan_logs`;
 CREATE TABLE `label_scan_logs`  (
   `id` int NOT NULL AUTO_INCREMENT,
   `label_id` int NOT NULL,
-  `action` enum('print','scan_out','scan_in','complete','void') CHARACTER SET utf32 COLLATE utf32_general_ci NOT NULL,
+  `action` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `user_id` int NULL DEFAULT NULL,
   `scan_time` datetime NULL DEFAULT current_timestamp,
-  `notes` text CHARACTER SET utf32 COLLATE utf32_general_ci NULL,
   PRIMARY KEY (`id`) USING BTREE,
-  INDEX `label_id`(`label_id` ASC) USING BTREE,
-  CONSTRAINT `label_scan_logs_ibfk_1` FOREIGN KEY (`label_id`) REFERENCES `labels` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf32 COLLATE = utf32_general_ci ROW_FORMAT = Dynamic;
+  INDEX `idx_label_id`(`label_id` ASC) USING BTREE,
+  INDEX `idx_scan_time`(`scan_time` ASC) USING BTREE,
+  CONSTRAINT `fk_label_scan_logs_label_id` FOREIGN KEY (`label_id`) REFERENCES `labels` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of label_scan_logs
@@ -97,12 +107,14 @@ CREATE TABLE `label_scan_logs`  (
 DROP TABLE IF EXISTS `labels`;
 CREATE TABLE `labels`  (
   `id` int NOT NULL AUTO_INCREMENT,
-  `label_code` varchar(50) CHARACTER SET utf32 COLLATE utf32_general_ci NOT NULL,
+  `label_code` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `packing_id` int NOT NULL,
-  `label_type` enum('single','master','child') CHARACTER SET utf32 COLLATE utf32_general_ci NULL DEFAULT 'single',
+  `label_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT 'single',
   `parent_label_id` int NULL DEFAULT NULL,
-  `qr_code` text CHARACTER SET utf32 COLLATE utf32_general_ci NULL,
-  `status` enum('active','printed','scanned_out','scanned_in','completed','void') CHARACTER SET utf32 COLLATE utf32_general_ci NULL DEFAULT 'active',
+  `label_format` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT 'kenda',
+  `bale_number` int NULL DEFAULT 1,
+  `total_bales` int NULL DEFAULT 1,
+  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT 'active',
   `printed_at` datetime NULL DEFAULT NULL,
   `scanned_out_at` datetime NULL DEFAULT NULL,
   `scanned_in_at` datetime NULL DEFAULT NULL,
@@ -111,15 +123,74 @@ CREATE TABLE `labels`  (
   `updated_at` datetime NULL DEFAULT current_timestamp ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `label_code`(`label_code` ASC) USING BTREE,
-  INDEX `packing_id`(`packing_id` ASC) USING BTREE,
-  INDEX `parent_label_id`(`parent_label_id` ASC) USING BTREE,
-  CONSTRAINT `labels_ibfk_1` FOREIGN KEY (`packing_id`) REFERENCES `packing_list` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
-  CONSTRAINT `labels_ibfk_2` FOREIGN KEY (`parent_label_id`) REFERENCES `labels` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf32 COLLATE = utf32_general_ci ROW_FORMAT = Dynamic;
+  INDEX `idx_packing_id`(`packing_id` ASC) USING BTREE,
+  INDEX `idx_label_code`(`label_code` ASC) USING BTREE,
+  INDEX `idx_parent_id`(`parent_label_id` ASC) USING BTREE,
+  INDEX `idx_status`(`status` ASC) USING BTREE,
+  CONSTRAINT `fk_labels_packing_id` FOREIGN KEY (`packing_id`) REFERENCES `packing_list` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 59 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of labels
 -- ----------------------------
+INSERT INTO `labels` VALUES (1, 'ML202512040005000', 5, 'master', NULL, 'btg', 1, 25, 'active', NULL, NULL, NULL, NULL, '2025-12-04 15:20:21', '2025-12-04 15:20:21');
+INSERT INTO `labels` VALUES (2, 'CL202512040005001', 5, 'child', 1, 'btg', 1, 25, 'printed', '2025-12-04 15:20:21', NULL, NULL, NULL, '2025-12-04 15:20:21', '2025-12-04 15:20:21');
+INSERT INTO `labels` VALUES (3, 'CL202512040005002', 5, 'child', 1, 'btg', 2, 25, 'printed', '2025-12-04 15:20:21', NULL, NULL, NULL, '2025-12-04 15:20:21', '2025-12-04 15:20:21');
+INSERT INTO `labels` VALUES (4, 'CL202512040005003', 5, 'child', 1, 'btg', 3, 25, 'printed', '2025-12-04 15:20:21', NULL, NULL, NULL, '2025-12-04 15:20:21', '2025-12-04 15:20:21');
+INSERT INTO `labels` VALUES (5, 'CL202512040005004', 5, 'child', 1, 'btg', 4, 25, 'printed', '2025-12-04 15:20:21', NULL, NULL, NULL, '2025-12-04 15:20:21', '2025-12-04 15:20:21');
+INSERT INTO `labels` VALUES (6, 'CL202512040005005', 5, 'child', 1, 'btg', 5, 25, 'printed', '2025-12-04 15:20:21', NULL, NULL, NULL, '2025-12-04 15:20:21', '2025-12-04 15:20:21');
+INSERT INTO `labels` VALUES (7, 'CL202512040005006', 5, 'child', 1, 'btg', 6, 25, 'printed', '2025-12-04 15:20:21', NULL, NULL, NULL, '2025-12-04 15:20:21', '2025-12-04 15:20:21');
+INSERT INTO `labels` VALUES (8, 'CL202512040005007', 5, 'child', 1, 'btg', 7, 25, 'printed', '2025-12-04 15:20:21', NULL, NULL, NULL, '2025-12-04 15:20:21', '2025-12-04 15:20:21');
+INSERT INTO `labels` VALUES (9, 'CL202512040005008', 5, 'child', 1, 'btg', 8, 25, 'printed', '2025-12-04 15:20:21', NULL, NULL, NULL, '2025-12-04 15:20:21', '2025-12-04 15:20:21');
+INSERT INTO `labels` VALUES (10, 'CL202512040005009', 5, 'child', 1, 'btg', 9, 25, 'printed', '2025-12-04 15:20:21', NULL, NULL, NULL, '2025-12-04 15:20:21', '2025-12-04 15:20:21');
+INSERT INTO `labels` VALUES (11, 'CL202512040005010', 5, 'child', 1, 'btg', 10, 25, 'printed', '2025-12-04 15:20:21', NULL, NULL, NULL, '2025-12-04 15:20:21', '2025-12-04 15:20:21');
+INSERT INTO `labels` VALUES (12, 'CL202512040005011', 5, 'child', 1, 'btg', 11, 25, 'printed', '2025-12-04 15:20:21', NULL, NULL, NULL, '2025-12-04 15:20:21', '2025-12-04 15:20:21');
+INSERT INTO `labels` VALUES (13, 'CL202512040005012', 5, 'child', 1, 'btg', 12, 25, 'printed', '2025-12-04 15:20:21', NULL, NULL, NULL, '2025-12-04 15:20:21', '2025-12-04 15:20:21');
+INSERT INTO `labels` VALUES (14, 'CL202512040005013', 5, 'child', 1, 'btg', 13, 25, 'printed', '2025-12-04 15:20:21', NULL, NULL, NULL, '2025-12-04 15:20:21', '2025-12-04 15:20:21');
+INSERT INTO `labels` VALUES (15, 'CL202512040005014', 5, 'child', 1, 'btg', 14, 25, 'printed', '2025-12-04 15:20:21', NULL, NULL, NULL, '2025-12-04 15:20:21', '2025-12-04 15:20:21');
+INSERT INTO `labels` VALUES (16, 'CL202512040005015', 5, 'child', 1, 'btg', 15, 25, 'printed', '2025-12-04 15:20:21', NULL, NULL, NULL, '2025-12-04 15:20:21', '2025-12-04 15:20:21');
+INSERT INTO `labels` VALUES (17, 'CL202512040005016', 5, 'child', 1, 'btg', 16, 25, 'printed', '2025-12-04 15:20:21', NULL, NULL, NULL, '2025-12-04 15:20:21', '2025-12-04 15:20:21');
+INSERT INTO `labels` VALUES (18, 'CL202512040005017', 5, 'child', 1, 'btg', 17, 25, 'printed', '2025-12-04 15:20:21', NULL, NULL, NULL, '2025-12-04 15:20:21', '2025-12-04 15:20:21');
+INSERT INTO `labels` VALUES (19, 'CL202512040005018', 5, 'child', 1, 'btg', 18, 25, 'printed', '2025-12-04 15:20:21', NULL, NULL, NULL, '2025-12-04 15:20:21', '2025-12-04 15:20:21');
+INSERT INTO `labels` VALUES (20, 'CL202512040005019', 5, 'child', 1, 'btg', 19, 25, 'printed', '2025-12-04 15:20:21', NULL, NULL, NULL, '2025-12-04 15:20:21', '2025-12-04 15:20:21');
+INSERT INTO `labels` VALUES (21, 'CL202512040005020', 5, 'child', 1, 'btg', 20, 25, 'printed', '2025-12-04 15:20:21', NULL, NULL, NULL, '2025-12-04 15:20:21', '2025-12-04 15:20:21');
+INSERT INTO `labels` VALUES (22, 'CL202512040005021', 5, 'child', 1, 'btg', 21, 25, 'printed', '2025-12-04 15:20:21', NULL, NULL, NULL, '2025-12-04 15:20:21', '2025-12-04 15:20:21');
+INSERT INTO `labels` VALUES (23, 'CL202512040005022', 5, 'child', 1, 'btg', 22, 25, 'printed', '2025-12-04 15:20:21', NULL, NULL, NULL, '2025-12-04 15:20:21', '2025-12-04 15:20:21');
+INSERT INTO `labels` VALUES (24, 'CL202512040005023', 5, 'child', 1, 'btg', 23, 25, 'printed', '2025-12-04 15:20:21', NULL, NULL, NULL, '2025-12-04 15:20:21', '2025-12-04 15:20:21');
+INSERT INTO `labels` VALUES (25, 'CL202512040005024', 5, 'child', 1, 'btg', 24, 25, 'printed', '2025-12-04 15:20:21', NULL, NULL, NULL, '2025-12-04 15:20:21', '2025-12-04 15:20:21');
+INSERT INTO `labels` VALUES (26, 'CL202512040005025', 5, 'child', 1, 'btg', 25, 25, 'printed', '2025-12-04 15:20:21', NULL, NULL, NULL, '2025-12-04 15:20:21', '2025-12-04 15:20:21');
+INSERT INTO `labels` VALUES (27, 'LBL202512040005001', 5, 'single', NULL, 'standard', 1, 1, 'printed', '2025-12-04 15:25:35', NULL, NULL, NULL, '2025-12-04 15:25:35', '2025-12-04 15:25:35');
+INSERT INTO `labels` VALUES (28, 'ML202512040005000951', 5, 'master', NULL, 'kenda', 1, 25, 'active', NULL, NULL, NULL, NULL, '2025-12-04 15:26:02', '2025-12-04 15:26:02');
+INSERT INTO `labels` VALUES (29, 'CL202512040005001102', 5, 'child', 28, 'kenda', 1, 25, 'printed', '2025-12-04 15:26:02', NULL, NULL, NULL, '2025-12-04 15:26:02', '2025-12-04 15:26:02');
+INSERT INTO `labels` VALUES (30, 'CL202512040005002517', 5, 'child', 28, 'kenda', 2, 25, 'printed', '2025-12-04 15:26:02', NULL, NULL, NULL, '2025-12-04 15:26:02', '2025-12-04 15:26:02');
+INSERT INTO `labels` VALUES (31, 'CL202512040005003357', 5, 'child', 28, 'kenda', 3, 25, 'printed', '2025-12-04 15:26:02', NULL, NULL, NULL, '2025-12-04 15:26:02', '2025-12-04 15:26:02');
+INSERT INTO `labels` VALUES (32, 'CL202512040005004116', 5, 'child', 28, 'kenda', 4, 25, 'printed', '2025-12-04 15:26:02', NULL, NULL, NULL, '2025-12-04 15:26:02', '2025-12-04 15:26:02');
+INSERT INTO `labels` VALUES (33, 'CL202512040005005276', 5, 'child', 28, 'kenda', 5, 25, 'printed', '2025-12-04 15:26:02', NULL, NULL, NULL, '2025-12-04 15:26:02', '2025-12-04 15:26:02');
+INSERT INTO `labels` VALUES (34, 'CL202512040005006121', 5, 'child', 28, 'kenda', 6, 25, 'printed', '2025-12-04 15:26:02', NULL, NULL, NULL, '2025-12-04 15:26:02', '2025-12-04 15:26:02');
+INSERT INTO `labels` VALUES (35, 'CL202512040005007817', 5, 'child', 28, 'kenda', 7, 25, 'printed', '2025-12-04 15:26:02', NULL, NULL, NULL, '2025-12-04 15:26:02', '2025-12-04 15:26:02');
+INSERT INTO `labels` VALUES (36, 'CL202512040005008730', 5, 'child', 28, 'kenda', 8, 25, 'printed', '2025-12-04 15:26:02', NULL, NULL, NULL, '2025-12-04 15:26:02', '2025-12-04 15:26:02');
+INSERT INTO `labels` VALUES (37, 'CL202512040005009800', 5, 'child', 28, 'kenda', 9, 25, 'printed', '2025-12-04 15:26:02', NULL, NULL, NULL, '2025-12-04 15:26:02', '2025-12-04 15:26:02');
+INSERT INTO `labels` VALUES (38, 'CL202512040005010493', 5, 'child', 28, 'kenda', 10, 25, 'printed', '2025-12-04 15:26:02', NULL, NULL, NULL, '2025-12-04 15:26:02', '2025-12-04 15:26:02');
+INSERT INTO `labels` VALUES (39, 'CL202512040005011670', 5, 'child', 28, 'kenda', 11, 25, 'printed', '2025-12-04 15:26:02', NULL, NULL, NULL, '2025-12-04 15:26:02', '2025-12-04 15:26:02');
+INSERT INTO `labels` VALUES (40, 'CL202512040005012426', 5, 'child', 28, 'kenda', 12, 25, 'printed', '2025-12-04 15:26:02', NULL, NULL, NULL, '2025-12-04 15:26:02', '2025-12-04 15:26:02');
+INSERT INTO `labels` VALUES (41, 'CL202512040005013527', 5, 'child', 28, 'kenda', 13, 25, 'printed', '2025-12-04 15:26:02', NULL, NULL, NULL, '2025-12-04 15:26:02', '2025-12-04 15:26:02');
+INSERT INTO `labels` VALUES (42, 'CL202512040005014723', 5, 'child', 28, 'kenda', 14, 25, 'printed', '2025-12-04 15:26:02', NULL, NULL, NULL, '2025-12-04 15:26:02', '2025-12-04 15:26:02');
+INSERT INTO `labels` VALUES (43, 'CL202512040005015786', 5, 'child', 28, 'kenda', 15, 25, 'printed', '2025-12-04 15:26:02', NULL, NULL, NULL, '2025-12-04 15:26:02', '2025-12-04 15:26:02');
+INSERT INTO `labels` VALUES (44, 'CL202512040005016438', 5, 'child', 28, 'kenda', 16, 25, 'printed', '2025-12-04 15:26:02', NULL, NULL, NULL, '2025-12-04 15:26:02', '2025-12-04 15:26:02');
+INSERT INTO `labels` VALUES (45, 'CL202512040005017492', 5, 'child', 28, 'kenda', 17, 25, 'printed', '2025-12-04 15:26:02', NULL, NULL, NULL, '2025-12-04 15:26:02', '2025-12-04 15:26:02');
+INSERT INTO `labels` VALUES (46, 'CL202512040005018422', 5, 'child', 28, 'kenda', 18, 25, 'printed', '2025-12-04 15:26:02', NULL, NULL, NULL, '2025-12-04 15:26:02', '2025-12-04 15:26:02');
+INSERT INTO `labels` VALUES (47, 'CL202512040005019245', 5, 'child', 28, 'kenda', 19, 25, 'printed', '2025-12-04 15:26:02', NULL, NULL, NULL, '2025-12-04 15:26:02', '2025-12-04 15:26:02');
+INSERT INTO `labels` VALUES (48, 'CL202512040005020929', 5, 'child', 28, 'kenda', 20, 25, 'printed', '2025-12-04 15:26:02', NULL, NULL, NULL, '2025-12-04 15:26:02', '2025-12-04 15:26:02');
+INSERT INTO `labels` VALUES (49, 'CL202512040005021651', 5, 'child', 28, 'kenda', 21, 25, 'printed', '2025-12-04 15:26:02', NULL, NULL, NULL, '2025-12-04 15:26:02', '2025-12-04 15:26:02');
+INSERT INTO `labels` VALUES (50, 'CL202512040005022306', 5, 'child', 28, 'kenda', 22, 25, 'printed', '2025-12-04 15:26:02', NULL, NULL, NULL, '2025-12-04 15:26:02', '2025-12-04 15:26:02');
+INSERT INTO `labels` VALUES (51, 'CL202512040005023231', 5, 'child', 28, 'kenda', 23, 25, 'printed', '2025-12-04 15:26:02', NULL, NULL, NULL, '2025-12-04 15:26:02', '2025-12-04 15:26:02');
+INSERT INTO `labels` VALUES (52, 'CL202512040005024913', 5, 'child', 28, 'kenda', 24, 25, 'printed', '2025-12-04 15:26:02', NULL, NULL, NULL, '2025-12-04 15:26:02', '2025-12-04 15:26:02');
+INSERT INTO `labels` VALUES (53, 'CL202512040005025454', 5, 'child', 28, 'kenda', 25, 25, 'printed', '2025-12-04 15:26:02', NULL, NULL, NULL, '2025-12-04 15:26:02', '2025-12-04 15:26:02');
+INSERT INTO `labels` VALUES (54, 'LBL202512040005001963', 5, 'single', NULL, 'kenda', 1, 1, 'printed', '2025-12-04 15:26:41', NULL, NULL, NULL, '2025-12-04 15:26:41', '2025-12-04 15:26:41');
+INSERT INTO `labels` VALUES (55, 'LBL202512040005001854', 5, 'single', NULL, 'kenda', 1, 1, 'printed', '2025-12-04 15:27:33', NULL, NULL, NULL, '2025-12-04 15:27:33', '2025-12-04 15:27:33');
+INSERT INTO `labels` VALUES (56, 'LBL202512040005001824', 5, 'single', NULL, 'kenda', 1, 1, 'printed', '2025-12-04 16:03:49', NULL, NULL, NULL, '2025-12-04 16:03:49', '2025-12-04 16:03:49');
+INSERT INTO `labels` VALUES (57, 'LBL202512040005001413', 5, 'single', NULL, 'standard', 1, 1, 'printed', '2025-12-04 16:12:57', NULL, NULL, NULL, '2025-12-04 16:12:57', '2025-12-04 16:12:57');
+INSERT INTO `labels` VALUES (58, 'LBL202512040005001911', 5, 'single', NULL, 'kenda', 1, 1, 'printed', '2025-12-04 16:13:09', NULL, NULL, NULL, '2025-12-04 16:13:09', '2025-12-04 16:13:09');
 
 -- ----------------------------
 -- Table structure for log_stok
@@ -143,16 +214,21 @@ CREATE TABLE `log_stok`  (
   INDEX `idx_kode_barang`(`kode_barang` ASC) USING BTREE,
   INDEX `idx_tanggal`(`tanggal` ASC) USING BTREE,
   INDEX `idx_jenis`(`jenis` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of log_stok
 -- ----------------------------
 INSERT INTO `log_stok` VALUES (1, 'TIR002', 'stok_awal', 10, NULL, NULL, NULL, NULL, NULL, NULL, 'Stok awal barang', '2025-12-02', '2025-12-02 05:46:38');
-INSERT INTO `log_stok` VALUES (2, 'TUB004', 'stok_awal', 10, NULL, NULL, NULL, NULL, NULL, NULL, 'Stok awal barang', '2025-12-02', '2025-12-02 07:02:01');
 INSERT INTO `log_stok` VALUES (3, 'TUB002', 'masuk', 9, NULL, NULL, '', NULL, '', NULL, 'Barang masuk', '2025-12-02', '2025-12-02 07:03:09');
 INSERT INTO `log_stok` VALUES (4, 'TUB002', 'keluar', 1, NULL, NULL, NULL, '', NULL, 'SJ001', 'Barang keluar', '2025-12-02', '2025-12-02 07:03:36');
 INSERT INTO `log_stok` VALUES (5, 'TUB002', 'masuk', 1, NULL, NULL, '', NULL, '', NULL, 'Barang masuk', '2025-12-02', '2025-12-02 07:03:51');
+INSERT INTO `log_stok` VALUES (6, 'TIR002', 'stok_awal', 10, NULL, NULL, NULL, NULL, NULL, NULL, 'Stok awal barang', '2025-12-05', '2025-12-05 11:13:46');
+INSERT INTO `log_stok` VALUES (7, 'TIR002', 'masuk', 1, NULL, NULL, '', NULL, '', NULL, 'Barang masuk', '2025-12-05', '2025-12-05 11:14:07');
+INSERT INTO `log_stok` VALUES (8, 'TIR002', 'keluar', 1, NULL, NULL, NULL, '', NULL, 'SJ001', 'Barang keluar', '2025-12-05', '2025-12-05 11:14:20');
+INSERT INTO `log_stok` VALUES (9, 'TIR002', 'adjustment', -5, 10, 5, NULL, NULL, NULL, NULL, 'Lainnya', '2025-12-05', '2025-12-05 14:39:44');
+INSERT INTO `log_stok` VALUES (10, 'TIR002', 'adjustment', 5, 5, 10, NULL, NULL, NULL, NULL, 'Lainnya', '2025-12-05', '2025-12-05 14:40:07');
+INSERT INTO `log_stok` VALUES (11, 'TIR003', 'masuk', 1, NULL, NULL, '', NULL, '', NULL, 'Barang masuk', '2025-12-05', '2025-12-05 16:03:02');
 
 -- ----------------------------
 -- Table structure for packing_items
@@ -217,11 +293,11 @@ CREATE TABLE `packing_list`  (
 -- ----------------------------
 -- Records of packing_list
 -- ----------------------------
-INSERT INTO `packing_list` VALUES (1, 'PL001', '2024-03-20', 'Customer A', 'Jl. Customer A No. 123', NULL, 50, 'scanned_out', 'completed', NULL, NULL, '2025-12-01 11:05:19', '2025-12-01 11:05:19', NULL, 'single');
+INSERT INTO `packing_list` VALUES (1, 'PL001', '2024-03-20', 'Customer A', 'Jl. Customer A No. 123', NULL, 50, 'printed', 'completed', NULL, NULL, '2025-12-01 11:05:19', '2025-12-04 08:38:43', NULL, 'single');
 INSERT INTO `packing_list` VALUES (2, 'PL002', '2024-03-20', 'Customer B', 'Jl. Customer B No. 456', NULL, 30, 'printed', 'pending', NULL, NULL, '2025-12-01 11:05:19', '2025-12-01 11:05:19', NULL, 'single');
-INSERT INTO `packing_list` VALUES (3, 'PL003', '2024-03-19', 'Customer C', 'Jl. Customer C No. 789', NULL, 25, 'printed', 'pending', NULL, NULL, '2025-12-01 11:05:19', '2025-12-01 11:05:19', NULL, 'single');
-INSERT INTO `packing_list` VALUES (4, 'PL004', '2024-03-19', 'Customer D', 'Jl. Customer D No. 101', NULL, 30, 'scanned_out', 'scanned_in', NULL, NULL, '2025-12-01 11:05:19', '2025-12-01 11:05:19', NULL, 'single');
-INSERT INTO `packing_list` VALUES (5, 'PL005', '2025-12-03', 'PT Wimcycle Indonesia', '-', '', 5, 'printed', 'pending', NULL, NULL, '2025-12-03 04:59:48', '2025-12-03 08:29:43', NULL, 'single');
+INSERT INTO `packing_list` VALUES (3, 'PL003', '2024-03-19', 'Customer C', 'Jl. Customer C No. 789', NULL, 25, 'printed', 'pending', NULL, NULL, '2025-12-01 11:05:19', '2025-12-04 06:02:48', NULL, 'single');
+INSERT INTO `packing_list` VALUES (4, 'PL004', '2024-03-19', 'Customer D', 'Jl. Customer D No. 101', NULL, 30, 'printed', 'scanned_in', NULL, NULL, '2025-12-01 11:05:19', '2025-12-04 08:49:27', NULL, 'single');
+INSERT INTO `packing_list` VALUES (5, 'PL005', '2025-12-03', 'PT Wimcycle Indonesia', '-', '', 5, 'printed', 'pending', NULL, NULL, '2025-12-03 04:59:48', '2025-12-04 16:13:09', NULL, 'single');
 
 -- ----------------------------
 -- Table structure for stok_mutations
