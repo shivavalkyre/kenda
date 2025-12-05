@@ -1,403 +1,6 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-// class Packing_list extends CI_Controller {
-    
-//     public function __construct()
-//     {
-//         parent::__construct();
-//         // Load model jika diperlukan
-//         // $this->load->model('Packing_model');
-//         // $this->load->model('Barang_model');
-        
-//         // Check login
-//         if(!$this->session->userdata('username')) {
-//             redirect('auth/login');
-//         }
-//     }
-    
-//     public function index()
-//     {
-//         // Data statistik
-//         $data = array(
-//             'title' => 'Packing List - KENDA',
-//             'username' => $this->session->userdata('username'),
-//             'active_menu' => 'packing',
-//             'content' => 'packing list/index',
-//             'total_packing' => 15,
-//             'pending_packing' => 3,
-//             'completed_packing' => 12,
-//             'total_items' => 485
-//         );
-        
-//         $this->load->view('template', $data);
-//     }
-
-//     // API untuk mendapatkan data packing list
-//     public function get_packing_list()
-//     {
-//         $this->output->set_content_type('application/json');
-        
-//         $filter_status = $this->input->get('status');
-        
-//         // Sample data - dalam implementasi real, ambil dari database
-//         $packing_list = [
-//             [
-//                 'id' => 1,
-//                 'no_packing' => 'PL001',
-//                 'tanggal' => '2024-03-20',
-//                 'customer' => 'Customer A',
-//                 'jumlah_item' => 50,
-//                 'status_label' => 'printed',
-//                 'status_loading' => 'loaded',
-//                 'items' => [
-//                     ['kode' => 'TIR001', 'nama' => 'Tire A', 'qty' => 30],
-//                     ['kode' => 'TUB001', 'nama' => 'Tube B', 'qty' => 20]
-//                 ]
-//             ],
-//             [
-//                 'id' => 2,
-//                 'no_packing' => 'PL002',
-//                 'tanggal' => '2024-03-20',
-//                 'customer' => 'Customer B',
-//                 'jumlah_item' => 30,
-//                 'status_label' => 'printed',
-//                 'status_loading' => 'pending',
-//                 'items' => [
-//                     ['kode' => 'TUB002', 'nama' => 'Tube C', 'qty' => 30]
-//                 ]
-//             ],
-//             [
-//                 'id' => 3,
-//                 'no_packing' => 'PL003',
-//                 'tanggal' => '2024-03-19',
-//                 'customer' => 'Customer C',
-//                 'jumlah_item' => 25,
-//                 'status_label' => 'draft',
-//                 'status_loading' => 'pending',
-//                 'items' => [
-//                     ['kode' => 'TIR002', 'nama' => 'Tire D', 'qty' => 25]
-//                 ]
-//             ]
-//         ];
-
-//         // Filter data jika diperlukan
-//         if ($filter_status && $filter_status !== 'all') {
-//             $packing_list = array_filter($packing_list, function($item) use ($filter_status) {
-//                 if ($filter_status === 'draft' || $filter_status === 'printed' || $filter_status === 'scanned') {
-//                     return $item['status_label'] === $filter_status;
-//                 } elseif ($filter_status === 'loaded') {
-//                     return $item['status_loading'] === 'loaded';
-//                 }
-//                 return true;
-//             });
-//         }
-
-//         $this->output->set_output(json_encode([
-//             'success' => true,
-//             'data' => array_values($packing_list)
-//         ]));
-//     }
-
-//     // Simpan packing list baru
-//     public function simpan()
-//     {
-//         $this->output->set_content_type('application/json');
-        
-//         // Get POST data
-//         $no_packing = $this->input->post('no_packing');
-//         $tanggal = $this->input->post('tanggal');
-//         $customer = $this->input->post('customer');
-//         $alamat = $this->input->post('alamat');
-//         $keterangan = $this->input->post('keterangan');
-//         $items = $this->input->post('items');
-        
-//         // Validasi input
-//         if (empty($no_packing) || empty($tanggal) || empty($customer)) {
-//             $this->output->set_output(json_encode([
-//                 'success' => false,
-//                 'message' => 'No. Packing, Tanggal, dan Customer harus diisi'
-//             ]));
-//             return;
-//         }
-        
-//         if (empty($items)) {
-//             $this->output->set_output(json_encode([
-//                 'success' => false,
-//                 'message' => 'Minimal satu item harus ditambahkan'
-//             ]));
-//             return;
-//         }
-        
-//         // Simpan ke database (dalam implementasi real)
-//         // $packing_id = $this->Packing_model->simpan_packing($data);
-        
-//         // Simulasi penyimpanan berhasil
-//         $packing_id = rand(100, 999);
-        
-//         $this->output->set_output(json_encode([
-//             'success' => true,
-//             'message' => 'Packing list berhasil disimpan',
-//             'data' => [
-//                 'id' => $packing_id,
-//                 'no_packing' => $no_packing,
-//                 'redirect_url' => site_url('packing_list')
-//             ]
-//         ]));
-//     }
-
-//     // Detail packing list
-//     public function detail($id)
-//     {
-//         $this->output->set_content_type('application/json');
-        
-//         // Sample data - dalam implementasi real, ambil dari database
-//         $packing_data = [
-//             'id' => $id,
-//             'no_packing' => 'PL' . str_pad($id, 3, '0', STR_PAD_LEFT),
-//             'tanggal' => '2024-03-20',
-//             'customer' => 'Customer ' . chr(64 + $id),
-//             'alamat' => 'Alamat customer ' . chr(64 + $id),
-//             'keterangan' => 'Keterangan packing list',
-//             'status_label' => 'printed',
-//             'status_loading' => 'pending',
-//             'items' => [
-//                 [
-//                     'kode' => 'TIR001',
-//                     'nama' => 'Tire Radial 205/55/R16',
-//                     'kategori' => 'Tire',
-//                     'qty' => 30
-//                 ],
-//                 [
-//                     'kode' => 'TUB001',
-//                     'nama' => 'Tube Standard 17"',
-//                     'kategori' => 'Tube',
-//                     'qty' => 20
-//                 ]
-//             ],
-//             'total_items' => 50
-//         ];
-        
-//         $this->output->set_output(json_encode([
-//             'success' => true,
-//             'data' => $packing_data
-//         ]));
-//     }
-
-//     // Cetak label packing
-//     public function cetak_label()
-//     {
-//         $this->output->set_content_type('application/json');
-        
-//         $packing_ids = $this->input->post('packing_ids');
-//         $type = $this->input->post('type'); // single atau multiple
-        
-//         if (empty($packing_ids)) {
-//             $this->output->set_output(json_encode([
-//                 'success' => false,
-//                 'message' => 'Pilih packing list yang akan dicetak'
-//             ]));
-//             return;
-//         }
-        
-//         // Generate label data (dalam implementasi real)
-//         $label_data = [];
-//         foreach ($packing_ids as $packing_id) {
-//             $label_data[] = [
-//                 'packing_id' => $packing_id,
-//                 'no_packing' => 'PL' . str_pad($packing_id, 3, '0', STR_PAD_LEFT),
-//                 'customer' => 'Customer ' . chr(64 + $packing_id),
-//                 'tanggal' => date('Y-m-d'),
-//                 'barcode' => 'PL' . str_pad($packing_id, 3, '0', STR_PAD_LEFT) . '-' . date('Ymd'),
-//                 'items' => [
-//                     ['nama' => 'Tire A', 'qty' => 10],
-//                     ['nama' => 'Tube B', 'qty' => 5]
-//                 ]
-//             ];
-//         }
-        
-//         $this->output->set_output(json_encode([
-//             'success' => true,
-//             'message' => 'Label berhasil digenerate',
-//             'data' => [
-//                 'labels' => $label_data,
-//                 'total' => count($label_data)
-//             ]
-//         ]));
-//     }
-
-//     // Update status packing
-//     public function update_status()
-//     {
-//         $this->output->set_content_type('application/json');
-        
-//         $packing_id = $this->input->post('packing_id');
-//         $field = $this->input->post('field'); // status_label atau status_loading
-//         $value = $this->input->post('value');
-        
-//         // Validasi
-//         $valid_fields = ['status_label', 'status_loading'];
-//         $valid_label_values = ['draft', 'printed', 'scanned'];
-//         $valid_loading_values = ['pending', 'loading', 'loaded'];
-        
-//         if (!in_array($field, $valid_fields)) {
-//             $this->output->set_output(json_encode([
-//                 'success' => false,
-//                 'message' => 'Field status tidak valid'
-//             ]));
-//             return;
-//         }
-        
-//         if ($field === 'status_label' && !in_array($value, $valid_label_values)) {
-//             $this->output->set_output(json_encode([
-//                 'success' => false,
-//                 'message' => 'Nilai status label tidak valid'
-//             ]));
-//             return;
-//         }
-        
-//         if ($field === 'status_loading' && !in_array($value, $valid_loading_values)) {
-//             $this->output->set_output(json_encode([
-//                 'success' => false,
-//                 'message' => 'Nilai status loading tidak valid'
-//             ]));
-//             return;
-//         }
-        
-//         // Update di database (dalam implementasi real)
-//         // $this->Packing_model->update_status($packing_id, $field, $value);
-        
-//         $this->output->set_output(json_encode([
-//             'success' => true,
-//             'message' => 'Status berhasil diupdate',
-//             'data' => [
-//                 'packing_id' => $packing_id,
-//                 'field' => $field,
-//                 'value' => $value
-//             ]
-//         ]));
-//     }
-
-//     // Get data barang untuk dropdown
-//     public function get_barang_list()
-//     {
-//         $this->output->set_content_type('application/json');
-        
-//         // Sample data barang - dalam implementasi real, ambil dari database
-//         $barang_list = [
-//             [
-//                 'id' => 1,
-//                 'kode' => 'TUB001',
-//                 'nama' => 'Tube Standard 17"',
-//                 'kategori' => 'Tube',
-//                 'stok' => 100
-//             ],
-//             [
-//                 'id' => 2,
-//                 'kode' => 'TIR001',
-//                 'nama' => 'Tire Radial 205/55/R16',
-//                 'kategori' => 'Tire',
-//                 'stok' => 50
-//             ],
-//             [
-//                 'id' => 3,
-//                 'kode' => 'TUB002',
-//                 'nama' => 'Tube Heavy Duty 19"',
-//                 'kategori' => 'Tube',
-//                 'stok' => 30
-//             ],
-//             [
-//                 'id' => 4,
-//                 'kode' => 'TIR002',
-//                 'nama' => 'Tire Offroad 265/70/R16',
-//                 'kategori' => 'Tire',
-//                 'stok' => 20
-//             ],
-//             [
-//                 'id' => 5,
-//                 'kode' => 'TUB003',
-//                 'nama' => 'Tube Racing 15"',
-//                 'kategori' => 'Tube',
-//                 'stok' => 40
-//             ]
-//         ];
-        
-//         $this->output->set_output(json_encode([
-//             'success' => true,
-//             'data' => $barang_list
-//         ]));
-//     }
-
-//     // Get statistics
-//     public function get_statistics()
-//     {
-//         $this->output->set_content_type('application/json');
-        
-//         // Sample statistics - dalam implementasi real, hitung dari database
-//         $statistics = [
-//             'total_packing' => 15,
-//             'pending_packing' => 3,
-//             'completed_packing' => 12,
-//             'total_items' => 485,
-//             'today_packing' => 2,
-//             'week_packing' => 8
-//         ];
-        
-//         $this->output->set_output(json_encode([
-//             'success' => true,
-//             'data' => $statistics
-//         ]));
-//     }
-
-//     // Hapus packing list
-//     public function hapus($id)
-//     {
-//         $this->output->set_content_type('application/json');
-        
-//         // Validasi
-//         if (empty($id)) {
-//             $this->output->set_output(json_encode([
-//                 'success' => false,
-//                 'message' => 'ID packing list tidak valid'
-//             ]));
-//             return;
-//         }
-        
-//         // Hapus dari database (dalam implementasi real)
-//         // $this->Packing_model->hapus_packing($id);
-        
-//         $this->output->set_output(json_encode([
-//             'success' => true,
-//             'message' => 'Packing list berhasil dihapus'
-//         ]));
-//     }
-
-//     // Export packing list (PDF/Excel)
-//     public function export()
-//     {
-//         $type = $this->input->get('type'); // pdf atau excel
-//         $packing_id = $this->input->get('packing_id');
-        
-//         // Load library untuk export
-//         // $this->load->library('pdf');
-//         // atau
-//         // $this->load->library('excel');
-        
-//         if ($type === 'pdf') {
-//             // Generate PDF
-//             // $this->pdf->generate_packing_pdf($packing_id);
-//             echo "PDF Export untuk packing list {$packing_id}";
-//         } elseif ($type === 'excel') {
-//             // Generate Excel
-//             // $this->excel->generate_packing_excel($packing_id);
-//             echo "Excel Export untuk packing list {$packing_id}";
-//         } else {
-//             echo "Format export tidak didukung";
-//         }
-//     }
-// }
-
-
 class Packing_list extends CI_Controller {
     
     public function __construct() {
@@ -566,44 +169,76 @@ class Packing_list extends CI_Controller {
 
     // ==================== PACKING CETAK METHODS ====================
 
-    public function cetak_packing($id) {
-        // Ambil data dari model
-        $packing = $this->Packing_model->get_packing_detail($id);
+    /**
+     * Halaman pilih format label
+     */
+    public function pilih_format($id) {
+        $packing = $this->Packing_model->getPackingById($id);
         
         if (!$packing) {
             show_404();
         }
         
-        // Pastikan data items ada
-        if (!isset($packing['items']) || empty($packing['items'])) {
-            $packing['items'] = [];
+        $data = [
+            'title' => 'Pilih Format Label - KENDA',
+            'username' => $this->session->userdata('username'),
+            'active_menu' => 'packing',
+            'content' => 'packing list/pilih_format_label',
+            'packing' => (array)$packing,
+            'packing_id' => $id
+        ];
+        
+        $this->load->view('template', $data);
+    }
+
+    /**
+     * Cetak single label dengan barcode dan QR
+     */
+    public function cetak_label($id = null, $format = 'kenda') {
+        // Ambil data packing list
+        $packing = $this->Packing_model->getPackingById($id);
+        
+        if (!$packing) {
+            show_404();
         }
         
-        // Hitung total items
-        $packing['total_items'] = isset($packing['jumlah_item']) ? $packing['jumlah_item'] : 0;
+        // Ambil items
+        $packing->items = $this->Packing_model->getPackingItems($id);
         
-        $data['packing'] = $packing;
+        $data = [
+            'packing' => $packing,
+            'format' => $format,
+            'print_time' => date('d/m/Y H:i:s'),
+            'barcode_url' => $this->generate_barcode_url($packing->no_packing),
+            'qr_url' => $this->generate_qr_url($packing)
+        ];
         
-        // Load view cetak
-        $this->load->view('cetak', $data);
+        // Update status ke printed
+        $this->Packing_model->updatePackingStatus($id, 'printed');
+        
+        // Load view berdasarkan format
+        $this->load->view('packing list/cetak_label_' . $format, $data);
     }
 
-    public function cetak_label($id = null) {
-        // Ambil data packing list
-        $data['packing'] = $this->Packing_model->getPackingById($id);
-        
-        // Load view cetak label
-        $this->load->view('packing list/cetak_label', $data);
-    }
-
+    /**
+     * Cetak multiple labels dengan barcode dan QR
+     */
     public function cetak_label_multiple() {
         try {
             // Get IDs from query string
             $ids = $this->input->get('ids');
+            $format = $this->input->get('format') ?: 'kenda';
+            $autoprint = $this->input->get('autoprint') ?: 0;
             
             if (empty($ids)) {
-                // Default untuk testing
-                $ids = '1,2,3,4,5';
+                // Show empty state
+                $data['packing_lists'] = [];
+                $data['total_labels'] = 0;
+                $data['error_message'] = 'Tidak ada ID packing list yang valid';
+                $data['print_date'] = date('d/m/Y H:i:s');
+                $data['autoprint'] = $autoprint;
+                $this->load->view('packing list/cetak_label_multiple_kenda', $data);
+                return;
             }
             
             // Convert string to array
@@ -612,42 +247,43 @@ class Packing_list extends CI_Controller {
             $ids_array = array_filter($ids_array);
             
             if (empty($ids_array)) {
-                // Show empty state
                 $data['packing_lists'] = [];
                 $data['total_labels'] = 0;
                 $data['error_message'] = 'Tidak ada ID packing list yang valid';
-            } else {
-                // Get packing lists data
-                $packing_lists = $this->Packing_model->get_packing_by_ids($ids_array);
-                
-                if (empty($packing_lists)) {
-                    // Jika tidak ada data, coba query sederhana
-                    $packing_lists = $this->Packing_model->getPackingByIds($ids_array);
-                    
-                    // Tambahkan jumlah_item default
-                    foreach ($packing_lists as &$list) {
-                        $list->jumlah_item = 0;
-                    }
-                }
-                
-                $data['packing_lists'] = $packing_lists;
-                $data['total_labels'] = count($packing_lists);
-                $data['error_message'] = null;
+                $data['print_date'] = date('d/m/Y H:i:s');
+                $data['autoprint'] = $autoprint;
+                $this->load->view('packing list/cetak_label_multiple_kenda', $data);
+                return;
             }
             
-            // Tambahkan data tambahan
-            $data['print_date'] = date('d/m/Y H:i:s');
-            $data['page_title'] = 'Cetak Label Packing List';
+            // Get packing lists data
+            $packing_lists = $this->Packing_model->get_packing_for_labels($ids_array);
             
-            // Debug info (hapus di production)
-            $data['debug_info'] = [
-                'ids_input' => $ids,
-                'ids_array' => $ids_array,
-                'count' => isset($packing_lists) ? count($packing_lists) : 0
+            if (empty($packing_lists)) {
+                $data['packing_lists'] = [];
+                $data['total_labels'] = 0;
+                $data['error_message'] = 'Data packing list tidak ditemukan';
+                $data['print_date'] = date('d/m/Y H:i:s');
+                $data['autoprint'] = $autoprint;
+                $this->load->view('packing list/cetak_label_multiple_kenda', $data);
+                return;
+            }
+            
+            // Update status semua ke printed
+            $this->Packing_model->update_batch_status($ids_array, 'printed');
+            
+            $data = [
+                'packing_lists' => $packing_lists,
+                'total_labels' => count($packing_lists),
+                'error_message' => null,
+                'print_date' => date('d/m/Y H:i:s'),
+                'autoprint' => $autoprint,
+                'format' => $format
             ];
             
-            // Load view
-            $this->load->view('packing list/cetak_label_multiple', $data);
+            // Load view berdasarkan format
+            $view_name = 'packing list/cetak_label_multiple_' . $format;
+            $this->load->view($view_name, $data);
             
         } catch (Exception $e) {
             // Error handling
@@ -655,12 +291,36 @@ class Packing_list extends CI_Controller {
             $data['total_labels'] = 0;
             $data['error_message'] = 'Terjadi kesalahan: ' . $e->getMessage();
             $data['print_date'] = date('d/m/Y H:i:s');
+            $data['autoprint'] = 0;
             
-            $this->load->view('packing list/cetak_label_multiple', $data);
+            $this->load->view('packing list/cetak_label_multiple_kenda', $data);
         }
     }
 
-    // Update status packing
+    /**
+     * Cetak packing list (bukan label)
+     */
+    public function cetak($id) {
+        // Ambil data dari model
+        $packing = $this->Packing_model->get_packing_detail($id);
+        
+        if (!$packing) {
+            show_404();
+        }
+        
+        // Tambahkan barcode dan QR
+        $packing['barcode_url'] = $this->generate_barcode_url($packing['no_packing']);
+        $packing['qr_url'] = $this->generate_qr_url($packing);
+        
+        $data['packing'] = $packing;
+        
+        // Load view cetak
+        $this->load->view('packing list/cetak_packing', $data);
+    }
+
+    /**
+     * API untuk update status
+     */
     public function api_update_status() {
         $this->load->library('form_validation');
         
@@ -679,12 +339,6 @@ class Packing_list extends CI_Controller {
         
         $packing_id = $this->input->post('packing_id');
         $status = $this->input->post('status');
-        
-        // Update status di database
-        $data = [
-            'status_scan_out' => $status,
-            'updated_at' => date('Y-m-d H:i:s')
-        ];
         
         $result = $this->Packing_model->updatePackingStatus($packing_id, $status);
         
@@ -705,109 +359,228 @@ class Packing_list extends CI_Controller {
         }
     }
 
-    // Cetak label dengan format tertentu
-    public function cetak_single_label($label_id, $format = 'kenda') {
-        $this->load->model('Label_model');
+    /**
+     * API untuk update status batch
+     */
+    public function api_update_status_batch() {
+        $this->load->library('form_validation');
         
-        // Validasi label
-        $this->db->where('id', $label_id);
-        $label = $this->db->get('labels')->row_array();
+        $this->form_validation->set_rules('packing_ids', 'Packing IDs', 'required');
+        $this->form_validation->set_rules('status', 'Status', 'required');
         
-        if (!$label) {
-            show_error('Label tidak ditemukan');
+        if ($this->form_validation->run() == FALSE) {
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode([
+                    'success' => false,
+                    'message' => validation_errors()
+                ]));
+            return;
         }
         
-        // Update status label
-        $this->db->where('id', $label_id);
-        $this->db->update('labels', [
-            'status' => 'printed',
-            'printed_at' => date('Y-m-d H:i:s')
-        ]);
+        $packing_ids = json_decode($this->input->post('packing_ids'), true);
+        $status = $this->input->post('status');
         
-        // Get data untuk cetak
-        $label_data = $this->Label_model->get_label_data_for_print($label_id, $format);
-        
-        if (!$label_data) {
-            show_error('Data label tidak ditemukan');
+        if (!is_array($packing_ids) || empty($packing_ids)) {
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode([
+                    'success' => false,
+                    'message' => 'Invalid packing IDs'
+                ]));
+            return;
         }
         
-        $data = [
-            'label_data' => $label_data,
-            'format' => $format,
-            'print_time' => date('Y-m-d H:i:s')
-        ];
+        $result = $this->Packing_model->update_batch_status($packing_ids, $status);
         
-        // Tentukan view berdasarkan format
-        $view_name = "label/cetak_{$format}";
-        $this->load->view($view_name, $data);
+        if ($result) {
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode([
+                    'success' => true,
+                    'message' => 'Status berhasil diupdate untuk ' . count($packing_ids) . ' packing list'
+                ]));
+        } else {
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode([
+                    'success' => false,
+                    'message' => 'Gagal mengupdate status batch'
+                ]));
+        }
     }
 
     /**
-     * Cetak multiple labels
+     * API untuk mendapatkan data barang
      */
-    public function cetak_multiple_labels() {
-        try {
-            // Get IDs from query string
-            $ids = $this->input->get('ids');
-            $format = $this->input->get('format') ?: 'kenda';
-            
-            if (empty($ids)) {
-                show_error('Tidak ada label yang dipilih untuk dicetak');
-                return;
-            }
-            
-            // Convert string to array
-            $ids_array = explode(',', $ids);
-            $ids_array = array_map('intval', $ids_array);
-            $ids_array = array_filter($ids_array);
-            
-            if (empty($ids_array)) {
-                show_error('Tidak ada ID label yang valid');
-                return;
-            }
-            
-            // Load model label
-            $this->load->model('Label_model');
-            
-            // Get labels data
-            $this->db->where_in('id', $ids_array);
-            $labels = $this->db->get('labels')->result_array();
-            
-            if (empty($labels)) {
-                show_error('Label tidak ditemukan');
-                return;
-            }
-            
-            // Update status semua label ke printed
-            $this->db->where_in('id', $ids_array);
-            $this->db->update('labels', [
-                'status' => 'printed',
-                'printed_at' => date('Y-m-d H:i:s')
-            ]);
-            
-            // Prepare data untuk view
-            $labels_data = [];
-            foreach ($labels as $label) {
-                $label_data = $this->Label_model->get_label_data_for_print($label['id'], $format);
-                if ($label_data) {
-                    $labels_data[] = $label_data;
-                }
-            }
-            
-            $data = [
-                'labels_data' => $labels_data,
-                'format' => $format,
-                'total_labels' => count($labels_data),
-                'print_time' => date('Y-m-d H:i:s')
+    public function api_get_barang() {
+        $this->load->model('Barang_model');
+        
+        $barang_list = $this->Barang_model->get_all_barang();
+        
+        $response = [
+            'success' => true,
+            'data' => $barang_list
+        ];
+        
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode($response));
+    }
+
+    // ==================== BARCODE & QR HELPER METHODS ====================
+
+    /**
+     * Generate barcode URL
+     */
+    private function generate_barcode_url($text) {
+        // Menggunakan Google Charts API untuk barcode
+        // Atau gunakan library lokal jika ada
+        $base_url = 'https://chart.googleapis.com/chart?';
+        $params = [
+            'cht' => 'bc', // barcode
+            'chs' => '200x80', // size
+            'chl' => $text, // data
+            'chld' => 'H|10' // height and quiet zone
+        ];
+        
+        return $base_url . http_build_query($params);
+    }
+
+    /**
+     * Generate QR code URL
+     */
+    private function generate_qr_url($data) {
+        $text = "Packing List: " . $data->no_packing . "\n";
+        $text .= "Customer: " . $data->customer . "\n";
+        $text .= "Date: " . date('d/m/Y', strtotime($data->tanggal)) . "\n";
+        $text .= "Items: " . ($data->jumlah_item ?? 0);
+        
+        $base_url = 'https://chart.googleapis.com/chart?';
+        $params = [
+            'cht' => 'qr', // qr code
+            'chs' => '150x150', // size
+            'chl' => urlencode($text), // data
+            'choe' => 'UTF-8' // encoding
+        ];
+        
+        return $base_url . http_build_query($params);
+    }
+
+    // ==================== SCAN METHODS ====================
+
+    public function api_scan_out() {
+        $packing_id = $this->input->post('packing_id');
+        
+        $data = [
+            'status_scan_out' => 'scanned_out',
+            'scan_out_time' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+        
+        $this->db->where('id', $packing_id);
+        $result = $this->db->update('packing_list', $data);
+        
+        if ($result) {
+            $response = [
+                'success' => true,
+                'message' => 'Scan Out berhasil'
             ];
-            
-            // Load view berdasarkan format
-            $view_name = "packing list/cetak_multiple_labels_{$format}";
-            $this->load->view($view_name, $data);
-            
-        } catch (Exception $e) {
-            show_error('Terjadi kesalahan: ' . $e->getMessage());
+        } else {
+            $response = [
+                'success' => false,
+                'message' => 'Gagal melakukan Scan Out'
+            ];
         }
+        
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode($response));
+    }
+
+    public function api_undo_scan_out() {
+        $packing_id = $this->input->post('packing_id');
+        
+        $data = [
+            'status_scan_out' => 'printed',
+            'scan_out_time' => null,
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+        
+        $this->db->where('id', $packing_id);
+        $result = $this->db->update('packing_list', $data);
+        
+        if ($result) {
+            $response = [
+                'success' => true,
+                'message' => 'Undo Scan Out berhasil'
+            ];
+        } else {
+            $response = [
+                'success' => false,
+                'message' => 'Gagal undo Scan Out'
+            ];
+        }
+        
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode($response));
+    }
+
+    public function api_scan_in() {
+        $packing_id = $this->input->post('packing_id');
+        
+        $data = [
+            'status_scan_in' => 'scanned_in',
+            'scan_in_time' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+        
+        $this->db->where('id', $packing_id);
+        $result = $this->db->update('packing_list', $data);
+        
+        if ($result) {
+            $response = [
+                'success' => true,
+                'message' => 'Scan In berhasil'
+            ];
+        } else {
+            $response = [
+                'success' => false,
+                'message' => 'Gagal melakukan Scan In'
+            ];
+        }
+        
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode($response));
+    }
+
+    public function api_complete_loading() {
+        $packing_id = $this->input->post('packing_id');
+        
+        $data = [
+            'status_scan_in' => 'completed',
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+        
+        $this->db->where('id', $packing_id);
+        $result = $this->db->update('packing_list', $data);
+        
+        if ($result) {
+            $response = [
+                'success' => true,
+                'message' => 'Loading selesai'
+            ];
+        } else {
+            $response = [
+                'success' => false,
+                'message' => 'Gagal menandai selesai loading'
+            ];
+        }
+        
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode($response));
     }
 }
-

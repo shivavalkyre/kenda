@@ -807,6 +807,52 @@ ob_start();
 .tooltip {
     z-index: var(--z-tooltip) !important;
 }
+
+/* Barcode Font */
+@font-face {
+    font-family: 'Libre Barcode 128';
+    src: url('https://fonts.googleapis.com/css2?family=Libre+Barcode+128&display=swap');
+}
+
+/* QR Code Styles */
+.qr-code {
+    width: 150px;
+    height: 150px;
+    background: white;
+    border: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+.qr-code::before {
+    content: '';
+    width: 120px;
+    height: 120px;
+    background: 
+        linear-gradient(45deg, transparent 45%, #333 45%, #333 55%, transparent 55%),
+        linear-gradient(-45deg, transparent 45%, #333 45%, #333 55%, transparent 55%),
+        linear-gradient(45deg, #333 45%, transparent 45%, transparent 55%, #333 55%),
+        linear-gradient(-45deg, #333 45%, transparent 45%, transparent 55%, #333 55%);
+    background-size: 60px 60px;
+    background-position: 0 0, 0 60px, 60px 0, 60px 60px;
+}
+
+/* Print Optimizations */
+@media print {
+    .print-optimize {
+        -webkit-print-color-adjust: exact !important;
+        color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    
+    .avoid-break {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+}
+
     </style>
 </head>
 <body>

@@ -1,3 +1,4 @@
+
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
@@ -157,6 +158,10 @@ class Packing_model extends CI_Model {
             // Status scan
             $packing['status_scan_out'] = isset($packing['status_scan_out']) ? $packing['status_scan_out'] : 'Label_foreach';
             $packing['status_scan_in'] = isset($packing['status_scan_in']) ? $packing['status_scan_in'] : 'Return Loading';
+            
+            // Generate barcode data
+            $packing['barcode_data'] = $this->generate_barcode_data($packing['no_packing']);
+            $packing['qr_code_data'] = $this->generate_qr_data($packing);
         }
         
         return $packing ?: [];
@@ -246,7 +251,15 @@ class Packing_model extends CI_Model {
     public function getPackingById($id) {
         $this->db->where('id', $id);
         $query = $this->db->get('packing_list');
-        return $query->row();
+        $packing = $query->row_array();
+        
+        if ($packing) {
+            // Tambahkan barcode dan QR data
+            $packing['barcode_data'] = $this->generate_barcode_data($packing['no_packing']);
+            $packing['qr_code_data'] = $this->generate_qr_data($packing);
+        }
+        
+        return (object)$packing;
     }
 
     /**
@@ -259,15 +272,27 @@ class Packing_model extends CI_Model {
         
         $this->db->where_in('id', $ids);
         $query = $this->db->get('packing_list');
-        return $query->result();
+        $packings = $query->result_array();
+        
+        foreach ($packings as &$packing) {
+            $packing['barcode_data'] = $this->generate_barcode_data($packing['no_packing']);
+            $packing['qr_code_data'] = $this->generate_qr_data($packing);
+        }
+        
+        return array_map(function($item) {
+            return (object)$item;
+        }, $packings);
     }
 
     /**
     * Get packing items
     */
     public function getPackingItems($packingId) {
-        $this->db->where('packing_id', $packingId);
-        return $this->db->get('packing_items')->result();
+        $this->db->select('pi.*, b.kode_barang as kode, b.nama_barang as nama, b.kategori, b.satuan');
+        $this->db->from('packing_items pi');
+        $this->db->join('barang b', 'pi.kode_barang = b.kode_barang', 'left');
+        $this->db->where('pi.packing_id', $packingId);
+        return $this->db->get()->result();
     }
 
     /**
@@ -305,7 +330,14 @@ class Packing_model extends CI_Model {
         $this->db->where_in('p.id', $ids);
         $this->db->order_by('p.created_at', 'DESC');
         
-        return $this->db->get()->result();
+        $packings = $this->db->get()->result();
+        
+        foreach ($packings as $packing) {
+            $packing->barcode_data = $this->generate_barcode_data($packing->no_packing);
+            $packing->qr_code_data = $this->generate_qr_data((array)$packing);
+        }
+        
+        return $packings;
     }
 
     // ==================== UTILITY METHODS ====================
@@ -337,6 +369,96 @@ class Packing_model extends CI_Model {
     public function get_packing_by_label($label_code) {
         $this->db->where('no_packing', $label_code);
         return $this->db->get('packing_list')->row_array();
+    }
+
+    // ==================== BARCODE & QR CODE METHODS ====================
+
+    /**
+     * Generate barcode data for packing number
+     */
+    public function generate_barcode_data($packing_number) {
+        // Menggunakan format Code 128 untuk barcode
+        $data = [
+            'type' => 'C128', // Code 128
+            'data' => $packing_number,
+            'width' => 2,
+            'height' => 50,
+            'format' => 'PNG'
+        ];
+        
+        return $data;
+    }
+
+    /**
+     * Generate QR code data for packing
+     */
+    public function generate_qr_data($packing_data) {
+        // Data untuk QR Code
+        $qr_content = "Packing List Information:\n";
+        $qr_content .= "No: " . ($packing_data['no_packing'] ?? '') . "\n";
+        $qr_content .= "Customer: " . ($packing_data['customer'] ?? '') . "\n";
+        $qr_content .= "Date: " . ($packing_data['tanggal'] ?? '') . "\n";
+        $qr_content .= "Total Items: " . ($packing_data['jumlah_item'] ?? 0) . "\n";
+        $qr_content .= "Status: " . ($packing_data['status_scan_out'] ?? '') . "\n";
+        $qr_content .= "Generated: " . date('Y-m-d H:i:s');
+        
+        return [
+            'data' => $qr_content,
+            'size' => 150,
+            'padding' => 10,
+            'format' => 'PNG'
+        ];
+    }
+
+    /**
+     * Update multiple packing status
+     */
+    public function update_batch_status($packing_ids, $status) {
+        if (empty($packing_ids)) {
+            return false;
+        }
+        
+        $data = [];
+        $timestamp = date('Y-m-d H:i:s');
+        
+        foreach ($packing_ids as $id) {
+            $data[] = [
+                'id' => $id,
+                'status_scan_out' => $status,
+                'updated_at' => $timestamp
+            ];
+        }
+        
+        return $this->db->update_batch('packing_list', $data, 'id');
+    }
+
+    /**
+     * Get packing list for label printing
+     */
+    public function get_packing_for_labels($ids) {
+        if (empty($ids)) {
+            return [];
+        }
+        
+        $this->db->select('p.*, 
+            (SELECT COUNT(*) FROM packing_items WHERE packing_id = p.id) as jumlah_item,
+            (SELECT GROUP_CONCAT(nama_barang SEPARATOR ", ") FROM packing_items WHERE packing_id = p.id LIMIT 3) as item_names');
+        $this->db->from('packing_list p');
+        $this->db->where_in('p.id', $ids);
+        $this->db->order_by('p.created_at', 'DESC');
+        
+        $packings = $this->db->get()->result();
+        
+        foreach ($packings as $packing) {
+            // Generate barcode and QR
+            $packing->barcode_data = $this->generate_barcode_data($packing->no_packing);
+            $packing->qr_code_data = $this->generate_qr_data((array)$packing);
+            
+            // Get items for this packing
+            $packing->items = $this->getPackingItems($packing->id);
+        }
+        
+        return $packings;
     }
 }
 ?>
